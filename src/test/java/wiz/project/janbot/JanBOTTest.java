@@ -25,14 +25,6 @@ import org.pircbotx.exception.NickAlreadyInUseException;
 public final class JanBOTTest {
     
     /**
-     * コンストラクタ
-     */
-    public JanBOTTest() {
-    }
-    
-    
-    
-    /**
      * initialize() のテスト
      */
     @Test

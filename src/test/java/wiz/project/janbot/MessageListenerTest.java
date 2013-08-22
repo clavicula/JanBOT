@@ -20,14 +20,6 @@ import org.pircbotx.hooks.events.MessageEvent;
 public final class MessageListenerTest {
     
     /**
-     * コンストラクタ
-     */
-    public MessageListenerTest() {
-    }
-    
-    
-    
-    /**
      * onMessage() のテスト
      */
     @Test

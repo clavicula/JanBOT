@@ -11,6 +11,8 @@ import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
 import org.pircbotx.hooks.events.PrivateMessageEvent;
 
+import wiz.project.janbot.game.GameMaster;
+
 
 
 /**
@@ -44,8 +46,11 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             JanBOT.getInstance().println("(  ；∀；)");
             JanBOT.getInstance().disconnect();
         }
+        else if (message.equals("jan start")) {
+            GameMaster.getInstance().onStartSolo(event.getUser().getNick());
+        }
         else if (message.equals("jan end")) {
-            JanBOT.getInstance().println("--- 終了 ---");
+            GameMaster.getInstance().onEnd();
         }
     }
     
