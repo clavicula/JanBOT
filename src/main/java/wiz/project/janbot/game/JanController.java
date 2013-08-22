@@ -21,6 +21,21 @@ import wiz.project.janbot.game.exception.JanException;
 interface JanController {
     
     /**
+     * 打牌 (ツモ切り)
+     * 
+     * @throws JanException 処理に失敗。
+     */
+    public void discard() throws JanException;
+    
+    /**
+     * 打牌 (手出し)
+     * 
+     * @param target 捨て牌。
+     * @throws JanException 処理に失敗。
+     */
+    public void discard(final JanPai target) throws JanException;
+    
+    /**
      * 開始
      * 
      * @param deck 牌山。

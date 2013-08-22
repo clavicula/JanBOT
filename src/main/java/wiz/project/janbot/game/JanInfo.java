@@ -240,6 +240,14 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
+     * アクティブプレイヤーの風を次に移す
+     */
+    public void setActiveWindToNext() {
+        _activeWind = _activeWind.getNext();
+        setChanged();
+    }
+    
+    /**
      * 牌山を設定
      * 
      * @param deck 牌山。

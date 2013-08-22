@@ -20,6 +20,7 @@ import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
 import wiz.project.jan.util.JanPaiUtil;
 import wiz.project.janbot.JanBOT;
+import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
 
 
@@ -56,6 +57,61 @@ public final class GameMaster {
     public GameStatus getStatus() {
         synchronized (_STATUS_LOCK) {
             return _status;
+        }
+    }
+    
+    /**
+     * 打牌処理
+     * 
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onDiscard() throws JanException {
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            _controller.discard();
+        }
+    }
+    
+    /**
+     * 打牌処理
+     * 
+     * @param target 捨て牌。
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onDiscard(final String target) throws JanException {
+        if (target == null) {
+            throw new NullPointerException("Discard target is null.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        if (target.isEmpty()) {
+            // ユーザの指定ミスなので何もしない
+            return;
+        }
+        
+        try {
+            final JanPai targetPai = convertStringToJanPai(target);
+            synchronized (_CONTROLLER_LOCK) {
+                _controller.discard(targetPai);
+            }
+        }
+        catch (final InvalidInputException e) {
+            // ユーザの指定ミスなので何もしない
+            return;
         }
     }
     
@@ -114,6 +170,105 @@ public final class GameMaster {
     }
     
     
+    
+    /**
+     * 文字列を牌に変換
+     * 
+     * @param source 変換元。
+     * @return 変換結果。
+     * @throws InvalidInputException 不正な入力。
+     */
+    private JanPai convertStringToJanPai(final String source) throws InvalidInputException {
+        switch (source) {
+        case "1m":
+            return JanPai.MAN_1;
+        case "2m":
+            return JanPai.MAN_2;
+        case "3m":
+            return JanPai.MAN_3;
+        case "4m":
+            return JanPai.MAN_4;
+        case "5m":
+            return JanPai.MAN_5;
+        case "6m":
+            return JanPai.MAN_6;
+        case "7m":
+            return JanPai.MAN_7;
+        case "8m":
+            return JanPai.MAN_8;
+        case "9m":
+            return JanPai.MAN_9;
+        case "1p":
+            return JanPai.PIN_1;
+        case "2p":
+            return JanPai.PIN_2;
+        case "3p":
+            return JanPai.PIN_3;
+        case "4p":
+            return JanPai.PIN_4;
+        case "5p":
+            return JanPai.PIN_5;
+        case "6p":
+            return JanPai.PIN_6;
+        case "7p":
+            return JanPai.PIN_7;
+        case "8p":
+            return JanPai.PIN_8;
+        case "9p":
+            return JanPai.PIN_9;
+        case "1s":
+            return JanPai.SOU_1;
+        case "2s":
+            return JanPai.SOU_2;
+        case "3s":
+            return JanPai.SOU_3;
+        case "4s":
+            return JanPai.SOU_4;
+        case "5s":
+            return JanPai.SOU_5;
+        case "6s":
+            return JanPai.SOU_6;
+        case "7s":
+            return JanPai.SOU_7;
+        case "8s":
+            return JanPai.SOU_8;
+        case "9s":
+            return JanPai.SOU_9;
+        case "東":
+        case "ton":
+        case "dong":
+            return JanPai.TON;
+        case "南":
+        case "nan":
+            return JanPai.NAN;
+        case "西":
+        case "sha":
+        case "sya":
+        case "xi":
+            return JanPai.SHA;
+        case "北":
+        case "pei":
+        case "pe":
+        case "bei":
+            return JanPai.PEI;
+        case "白":
+        case "haku":
+        case "bai":
+            return JanPai.HAKU;
+        case "發":
+        case "hatu":
+        case "hatsu":
+        case "fa":
+            return JanPai.HATU;
+        case "中":
+        case "chun":
+        case "ch":
+        case "zhong":
+            return JanPai.CHUN;
+        default:
+            throw new InvalidInputException("Invalid jan pai - " + source);
+        }
+    }
     
     /**
      * 麻雀コントローラを生成

@@ -15,6 +15,7 @@ import wiz.project.jan.Hand;
 import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
 import wiz.project.janbot.game.exception.GameSetException;
+import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
 
 
@@ -35,6 +36,48 @@ class SoloJanController implements JanController {
     
     
     /**
+     * 打牌 (ツモ切り)
+     */
+    public void discard() throws JanException {
+        _firstPhase = false;
+        
+        // 次巡へ
+        _info.setActiveWindToNext();
+        onPhase();
+    }
+    
+    /**
+     * 打牌 (手出し)
+     */
+    public void discard(final JanPai target) throws JanException {
+        if (target == null) {
+            throw new NullPointerException("Discard target is null.");
+        }
+        
+        final JanPai activeTsumo = _info.getActiveTsumo();
+        if (target == activeTsumo) {
+            // 直前のツモ牌が指定された
+            discard();
+            return;
+        }
+        
+        final Hand hand = _info.getActiveHand();
+        if (!hand.getMenZenMap().containsKey(target)) {
+            // 手牌に存在しないが指定された
+            throw new InvalidInputException("Invalid discard target - " + target);
+        }
+        
+        // 打牌
+        _firstPhase = false;
+        hand.removeJanPai(target);
+        hand.addJanPai(activeTsumo);
+        
+        // 次巡へ
+        _info.setActiveWindToNext();
+        onPhase();
+    }
+    
+    /**
      * 開始
      */
     public void start(final List<JanPai> deck, final Map<Wind, Player> playerTable) throws JanException {
@@ -51,11 +94,13 @@ class SoloJanController implements JanController {
             throw new IllegalArgumentException("Invalid player table size - " + playerTable.size());
         }
         
+        // 実況者を設定
         _info.addObserver(new GameAnnouncer());
         
+        // 席決めと山積み
+        _info.setFieldWind(Wind.TON);
         _info.setPlayerTable(playerTable);
         _info.setDeck(deck);
-        _info.setFieldWind(Wind.TON);
         
         // 王牌を生成
         final int deckSize = deck.size();
@@ -113,8 +158,8 @@ class SoloJanController implements JanController {
             _info.setActiveDiscard(activeTsumo);
             // TODO 鳴き処理
             
-            // 次順へ
-            _info.setActiveWind(_info.getActiveWind().getNext());
+            // 次巡へ
+            _info.setActiveWindToNext();
             onPhase();
             return;
         case HUMAN:

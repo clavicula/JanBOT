@@ -34,6 +34,26 @@ public final class GameMasterTest {
     }
     
     /**
+     * onDiscard() のテスト
+     */
+    @Test
+    public void testOnDiscard() throws JanException, IOException {
+        {
+            // 正常
+            MockBOT.initialize();
+            MockBOT.connect();
+            
+            try {
+                GameMaster.getInstance().onStartSolo(TEST_PLAYER_NAME);
+                GameMaster.getInstance().onDiscard();
+            }
+            finally {
+                GameMaster.getInstance().onEnd();
+            }
+        }
+    }
+    
+    /**
      * onEnd() のテスト
      */
     @Test
@@ -43,9 +63,13 @@ public final class GameMasterTest {
             MockBOT.initialize();
             MockBOT.connect();
             
-            GameMaster.getInstance().onStartSolo(TEST_PLAYER_NAME);
-            GameMaster.getInstance().onEnd();
-            assertEquals(GameStatus.IDLE, GameMaster.getInstance().getStatus());
+            try {
+                GameMaster.getInstance().onStartSolo(TEST_PLAYER_NAME);
+            }
+            finally {
+                GameMaster.getInstance().onEnd();
+                assertEquals(GameStatus.IDLE, GameMaster.getInstance().getStatus());
+            }
         }
     }
     

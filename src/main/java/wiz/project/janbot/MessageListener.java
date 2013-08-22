@@ -42,15 +42,21 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         
         // メッセージ解析
         final String message = event.getMessage();
-        if (message.equals("jan ochiro")) {
+        if (message.equals("jantest ochiro")) {
             JanBOT.getInstance().println("(  ；∀；)");
             JanBOT.getInstance().disconnect();
         }
-        else if (message.equals("jan start")) {
+        else if (message.equals("jantest start")) {
             GameMaster.getInstance().onStartSolo(event.getUser().getNick());
         }
-        else if (message.equals("jan end")) {
+        else if (message.equals("jantest end")) {
             GameMaster.getInstance().onEnd();
+        }
+        else if (message.equals("jantest d")) {
+            GameMaster.getInstance().onDiscard();
+        }
+        else if (message.startsWith("jantest d ")) {
+            GameMaster.getInstance().onDiscard(message.substring(10));
         }
     }
     

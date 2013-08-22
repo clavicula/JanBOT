@@ -54,6 +54,13 @@ public class GameAnnouncer implements Observer {
      * @param info 麻雀ゲーム情報。
      */
     protected void updateOnSolo(final JanInfo info, final AnnounceType type) {
+        if (info == null) {
+            throw new NullPointerException("Game information is null.");
+        }
+        if (type == null) {
+            throw new NullPointerException("Announce type is null.");
+        }
+        
         final Hand hand = info.getActiveHand();
         final JanPai activeTsumo = info.getActiveTsumo();
         
