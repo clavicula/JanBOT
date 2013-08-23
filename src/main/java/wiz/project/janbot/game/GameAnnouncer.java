@@ -49,6 +49,20 @@ public class GameAnnouncer implements Observer {
     
     
     /**
+     * 雀牌を文字列に変換
+     * 
+     * @param pai 雀牌。
+     * @return 変換結果。
+     */
+    protected String convertJanPaiToString(final JanPai pai) {
+        final StringBuilder buf = new StringBuilder();
+        buf.append(COLOR_FLAG).append(getColorCode(pai));
+        buf.append(pai);
+        buf.append(COLOR_FLAG);
+        return buf.toString();
+    }
+    
+    /**
      * 状況更新時の処理
      * 
      * @param info 麻雀ゲーム情報。
@@ -61,23 +75,41 @@ public class GameAnnouncer implements Observer {
             throw new NullPointerException("Announce type is null.");
         }
         
-        final Hand hand = info.getActiveHand();
-        final JanPai activeTsumo = info.getActiveTsumo();
-        
         final List<String> messageList = new ArrayList<>();
+        if (type.isCallable()) {
+            final StringBuilder buf = new StringBuilder();
+            buf.append(convertJanPaiToString(info.getActiveDiscard())).append(" <- ");
+            if (type.isCallableRon()) {
+                buf.append("ロン可能です");
+            }
+            messageList.add(buf.toString());
+        }
+        
         if (type.isAnnounceField()) {
             messageList.add(convertFieldToString(info));
         }
+        
         if (type.isAnnounceRiverSingle()) {
             messageList.add(convertRiverToString(info.getActiveRiver()));
         }
+        
         if (type.isAnnounceHand()) {
             final StringBuilder buf = new StringBuilder();
-            buf.append(convertHandToString(hand));
+            buf.append(convertHandToString(info.getActiveHand()));
             if (type.isAnnounceTsumo()) {
-                buf.append(" ").append(convertTsumoToString(activeTsumo));
+                buf.append(" ").append(convertJanPaiToString(info.getActiveTsumo()));
+            }
+            else if (type.isAnnounceActiveDiscard()) {
+                buf.append(" ").append(convertJanPaiToString(info.getActiveDiscard()));
             }
             messageList.add(buf.toString());
+        }
+        
+        if (type == GameAnnounceType.COMPLETE_RON) {
+            messageList.add("---- ロン和了 ----");
+        }
+        else if (type == GameAnnounceType.COMPLETE_TSUMO) {
+            messageList.add("---- ツモ和了 ----");
         }
         
         JanBOT.getInstance().println(messageList);
@@ -97,9 +129,7 @@ public class GameAnnouncer implements Observer {
         buf.append("自風：").append(info.getActiveWind()).append("   ");
         buf.append("ドラ：");
         for (final JanPai pai : info.getWanPai().getDoraList()) {
-            buf.append(COLOR_FLAG).append(getColorCode(pai));
-            buf.append(pai);
-            buf.append(COLOR_FLAG);
+            buf.append(convertJanPaiToString(pai));
         }
         buf.append("   ");
         buf.append("残り枚数：").append(info.getRemainCount());
@@ -115,9 +145,7 @@ public class GameAnnouncer implements Observer {
     private String convertHandToString(final Hand hand) {
         final StringBuilder buf = new StringBuilder();
         for (final JanPai pai : hand.getMenZenList()) {
-            buf.append(COLOR_FLAG).append(getColorCode(pai));
-            buf.append(pai);
-            buf.append(COLOR_FLAG);
+            buf.append(convertJanPaiToString(pai));
         }
         
         if (hand.getFixedMenTsuCount() == 0) {
@@ -154,29 +182,13 @@ public class GameAnnouncer implements Observer {
         final StringBuilder buf = new StringBuilder();
         int count = 1;
         for (final JanPai pai : river) {
-            buf.append(COLOR_FLAG).append(getColorCode(pai));
-            buf.append(pai);
-            buf.append(COLOR_FLAG);
+            buf.append(convertJanPaiToString(pai));
             
             if (count % 6 == 0) {
                 buf.append(" ");
             }
             count++;
         }
-        return buf.toString();
-    }
-    
-    /**
-     * ツモ牌を文字列に変換
-     * 
-     * @param pai ツモ牌。
-     * @return 変換結果。
-     */
-    private String convertTsumoToString(final JanPai pai) {
-        final StringBuilder buf = new StringBuilder();
-        buf.append(COLOR_FLAG).append(getColorCode(pai));
-        buf.append(pai);
-        buf.append(COLOR_FLAG);
         return buf.toString();
     }
     

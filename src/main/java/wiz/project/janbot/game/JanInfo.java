@@ -139,7 +139,7 @@ public final class JanInfo extends Observable implements Cloneable {
      * @return アクティブプレイヤー。
      */
     public Player getActivePlayer() {
-        return _playerTable.get(_activeWind);
+        return getPlayer(_activeWind);
     }
     
     /**
@@ -221,6 +221,21 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
+     * プレイヤーを取得
+     * 
+     * @param wind 風。
+     * @return プレイヤー。
+     */
+    public Player getPlayer(final Wind wind) {
+        if (wind != null) {
+            return _playerTable.get(wind);
+        }
+        else {
+            return new Player();
+        }
+    }
+    
+    /**
      * プレイヤーテーブルを取得
      * 
      * @return プレイヤーテーブル。
@@ -270,6 +285,32 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
+     * アクティブプレイヤーか
+     * 
+     * @param playerName プレイヤー名。
+     * @return 判定結果。
+     */
+    public boolean isActivePlayer(final String playerName) {
+        if (playerName == null) {
+            return false;
+        }
+        return getActivePlayer().getName().equals(playerName);
+    }
+    
+    /**
+     * ゲームに参加中のプレイヤーか
+     * 
+     * @param playerName プレイヤー名。
+     * @return 判定結果。
+     */
+    public boolean isValidPlayer(final String playerName) {
+        if (playerName == null) {
+            return false;
+        }
+        return _playerTable.values().contains(playerName);
+    }
+    
+    /**
      * 監視者に状態を通知 (強制)
      * 
      * @param param 通知パラメータ。
@@ -291,6 +332,21 @@ public final class JanInfo extends Observable implements Cloneable {
         }
         else {
             _activeDiscard = JanPai.HAKU;
+        }
+    }
+    
+    /**
+     * アクティブプレイヤーを設定
+     * 
+     * @param playerName プレイヤー名。
+     */
+    public void setActivePlayer(final String playerName) {
+        if (playerName != null) {
+            for (final Map.Entry<Wind, Player> entry : _playerTable.entrySet()) {
+                if (entry.getValue().getName().equals(playerName)) {
+                    setActiveWind(entry.getKey());
+                }
+            }
         }
     }
     

@@ -14,6 +14,26 @@ package wiz.project.janbot.game;
 public enum GameAnnounceType {
     
     /**
+     * ロン和了
+     */
+    COMPLETE_RON,
+    
+    /**
+     * ツモ和了
+     */
+    COMPLETE_TSUMO,
+    
+    /**
+     * 流局
+     */
+    GAME_OVER,
+    
+    /**
+     * ロン可能
+     */
+    CALLABLE_RON,
+    
+    /**
      * 手牌 (ツモ牌抜き)
      */
     HAND,
@@ -27,16 +47,6 @@ public enum GameAnnounceType {
      * 手牌と場情報 (ツモ牌込み)
      */
     HAND_TSUMO_FIELD,
-    
-    /**
-     * 手牌と場情報と捨て牌情報 (ツモ牌抜き)
-     */
-    HAND_FIELD_RIVER,
-    
-    /**
-     * 手牌と場情報と捨て牌情報と裏ドラ (ツモ牌込み)
-     */
-    HAND_TSUMO_FIELD_RIVER_URADORA,
     
     /**
      * 場情報
@@ -66,15 +76,30 @@ public enum GameAnnounceType {
     
     
     /**
+     * 当たり牌を実況するか
+     * 
+     * @return 判定結果。
+     */
+    public boolean isAnnounceActiveDiscard() {
+        switch (this) {
+        case COMPLETE_RON:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
      * 場情報を実況するか
      * 
      * @return 判定結果。
      */
     public boolean isAnnounceField() {
         switch (this) {
+        case COMPLETE_TSUMO:
+        case GAME_OVER:
+        case CALLABLE_RON:
         case HAND_TSUMO_FIELD:
-        case HAND_FIELD_RIVER:
-        case HAND_TSUMO_FIELD_RIVER_URADORA:
         case FIELD:
         case FIELD_RIVER:
         case FIELD_RIVER_ALL:
@@ -91,11 +116,12 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceHand() {
         switch (this) {
+        case COMPLETE_TSUMO:
+        case GAME_OVER:
+        case CALLABLE_RON:
         case HAND:
         case HAND_TSUMO:
         case HAND_TSUMO_FIELD:
-        case HAND_FIELD_RIVER:
-        case HAND_TSUMO_FIELD_RIVER_URADORA:
             return true;
         default:
             return false;
@@ -109,8 +135,8 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceRiverSingle() {
         switch (this) {
-        case HAND_FIELD_RIVER:
-        case HAND_TSUMO_FIELD_RIVER_URADORA:
+        case COMPLETE_TSUMO:
+        case GAME_OVER:
         case RIVER:
         case FIELD_RIVER:
             return true;
@@ -141,7 +167,8 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceUraDora() {
         switch (this) {
-        case HAND_TSUMO_FIELD_RIVER_URADORA:
+        case COMPLETE_RON:
+        case COMPLETE_TSUMO:
             return true;
         default:
             return false;
@@ -155,9 +182,37 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceTsumo() {
         switch (this) {
+        case COMPLETE_TSUMO:
         case HAND_TSUMO:
         case HAND_TSUMO_FIELD:
-        case HAND_TSUMO_FIELD_RIVER_URADORA:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
+     * 副露可能か
+     * 
+     * @return 判定結果。
+     */
+    public boolean isCallable() {
+        switch (this) {
+        case CALLABLE_RON:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
+     * ロン可能か
+     * 
+     * @return 判定結果。
+     */
+    public boolean isCallableRon() {
+        switch (this) {
+        case CALLABLE_RON:
             return true;
         default:
             return false;

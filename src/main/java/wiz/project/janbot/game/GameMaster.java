@@ -20,6 +20,7 @@ import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
 import wiz.project.jan.util.JanPaiUtil;
 import wiz.project.janbot.JanBOT;
+import wiz.project.janbot.game.exception.BoneheadException;
 import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
 
@@ -57,6 +58,74 @@ public final class GameMaster {
     public GameStatus getStatus() {
         synchronized (_STATUS_LOCK) {
             return _status;
+        }
+    }
+    
+    /**
+     * ロン和了処理
+     * 
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onCompleteRon(final String playerName) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new NullPointerException("Player name is empty.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        try {
+            synchronized (_CONTROLLER_LOCK) {
+                if (!_controller.getGameInfo().isActivePlayer(playerName)) {
+                    _controller.completeRon(playerName);
+                }
+            }
+        }
+        catch (final BoneheadException e) {
+            JanBOT.getInstance().println("(  ´∀｀) ＜ チョンボ");
+            return;
+        }
+    }
+    
+    /**
+     * ツモ和了処理
+     * 
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onCompleteTsumo(final String playerName) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new NullPointerException("Player name is empty.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        try {
+            synchronized (_CONTROLLER_LOCK) {
+                if (_controller.getGameInfo().isActivePlayer(playerName)) {
+                    _controller.completeTsumo();
+                }
+            }
+        }
+        catch (final BoneheadException e) {
+            JanBOT.getInstance().println("(  ´∀｀) ＜ チョンボ");
+            return;
         }
     }
     
@@ -174,11 +243,8 @@ public final class GameMaster {
             _status = GameStatus.PLAYING_SOLO;
         }
         
-        // 牌山生成
-        final List<JanPai> deck = JanPaiUtil.createAllJanPaiList();
-        Collections.shuffle(deck, new SecureRandom());
-        
-        // 席決め
+        // 牌山生成と席決め
+        final List<JanPai> deck = createDeck();
         final Map<Wind, Player> playerTable = createPlayerTable(Arrays.asList(playerName));
         
         // 保存 (リプレイ用)
@@ -291,6 +357,17 @@ public final class GameMaster {
         default:
             throw new InvalidInputException("Invalid jan pai - " + source);
         }
+    }
+    
+    /**
+     * 牌山を生成
+     * 
+     * @return 牌山。
+     */
+    private List<JanPai> createDeck() {
+        final List<JanPai> deck = JanPaiUtil.createAllJanPaiList();
+        Collections.shuffle(deck, new SecureRandom());
+        return deck;
     }
     
     /**

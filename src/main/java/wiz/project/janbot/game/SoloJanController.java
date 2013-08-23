@@ -7,13 +7,19 @@
 package wiz.project.janbot.game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Observer;
+import java.util.TreeMap;
 
 import wiz.project.jan.Hand;
 import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
+import wiz.project.jan.util.HandCheckUtil;
+import wiz.project.jan.util.JanPaiUtil;
+import wiz.project.janbot.game.exception.BoneheadException;
+import wiz.project.janbot.game.exception.CallableException;
 import wiz.project.janbot.game.exception.GameSetException;
 import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
@@ -38,22 +44,115 @@ class SoloJanController implements JanController {
      */
     public SoloJanController(final Observer observer) {
         if (observer != null) {
-            _info.addObserver(observer);
+            synchronized (_GAME_INFO_LOCK) {
+                _info.addObserver(observer);
+            }
         }
     }
     
     
     
     /**
+     * 副露
+     */
+    public void call(final String playerName, final CallType type) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (type == null) {
+            throw new NullPointerException("Call type is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new IllegalArgumentException("Player name is empty.");
+        }
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+        // TODO 副露対応
+    }
+    
+    /**
+     * 和了 (ロン)
+     */
+    public void completeRon(final String playerName) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new IllegalArgumentException("Player name is empty.");
+        }
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+        synchronized (_GAME_INFO_LOCK) {
+            if (!_info.isValidPlayer(playerName)) {
+                throw new IllegalArgumentException("Inavlid player name - " + playerName);
+            }
+            
+            // 打牌したプレイヤーの風を記録
+            final Wind activeWind = _info.getActiveWind();
+            try {
+                // ロン宣言したプレイヤーをアクティブ化して判定
+                _info.setActivePlayer(playerName);
+                final JanPai discard = _info.getActiveDiscard();
+                final Map<JanPai, Integer> handWithDiscard = getHandMap(_info.getActiveWind(), discard);
+                if (!HandCheckUtil.isComplete(handWithDiscard)) {
+                    // チョンボ
+                    throw new BoneheadException("Not completed.");
+                }
+                if (_info.getActiveRiver().contains(discard)) {
+                    // フリテン
+                    throw new BoneheadException("Furiten.");
+                }
+                // TODO 役確認
+            }
+            catch (final Throwable e) {
+                // 和了しない場合、アクティブプレイヤーを元に戻す
+                _info.setActiveWind(activeWind);
+                throw e;
+            }
+            
+            _onGame = false;
+            _info.notifyObservers(GameAnnounceType.COMPLETE_RON);
+        }
+    }
+    
+    /**
+     * 和了 (ツモ)
+     */
+    public void completeTsumo() throws JanException {
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+        synchronized (_GAME_INFO_LOCK) {
+            final Map<JanPai, Integer> handWithTsumo = getHandMap(_info.getActiveWind(), _info.getActiveTsumo());
+            if (!HandCheckUtil.isComplete(handWithTsumo)) {
+                // チョンボ
+                throw new BoneheadException("Not completed.");
+            }
+            
+            _onGame = false;
+            _info.notifyObservers(GameAnnounceType.COMPLETE_TSUMO);
+        }
+    }
+    
+    /**
      * 打牌 (ツモ切り)
      */
     public void discard() throws JanException {
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
         _firstPhase = false;
         
         synchronized (_GAME_INFO_LOCK) {
             discardCore(_info.getActiveTsumo());
             
-            // 次巡へ
+            // 次の打牌へ
             _info.setActiveWindToNext();
             onPhase();
         }
@@ -66,6 +165,9 @@ class SoloJanController implements JanController {
         if (target == null) {
             throw new NullPointerException("Discard target is null.");
         }
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
         
         synchronized (_GAME_INFO_LOCK) {
             final JanPai activeTsumo = _info.getActiveTsumo();
@@ -76,7 +178,7 @@ class SoloJanController implements JanController {
             }
             
             final Hand hand = _info.getActiveHand();
-            if (!hand.getMenZenMap().containsKey(target)) {
+            if (hand.getMenZenMap().get(target) <= 0) {
                 // 手牌に存在しないが指定された
                 throw new InvalidInputException("Invalid discard target - " + target);
             }
@@ -85,9 +187,15 @@ class SoloJanController implements JanController {
             _firstPhase = false;
             hand.removeJanPai(target);
             hand.addJanPai(activeTsumo);
+            
+            final Wind activeWind = _info.getActiveWind();
+            _info.setHand(activeWind, hand);
             discardCore(target);
             
-            // 次巡へ
+            // 手変わりがあったので聴牌判定
+            _completeWait.put(activeWind, HandCheckUtil.getCompletableJanPaiList(getHandMap(activeWind)));
+            
+            // 次の打牌へ
             _info.setActiveWindToNext();
             onPhase();
         }
@@ -99,6 +207,20 @@ class SoloJanController implements JanController {
     public JanInfo getGameInfo() {
         synchronized (_GAME_INFO_LOCK) {
             return _info.clone();
+        }
+    }
+    
+    /**
+     * 次のプレイヤーの打牌へ
+     */
+    public void next() throws JanException {
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+        synchronized (_GAME_INFO_LOCK) {
+            _info.setActiveWindToNext();
+            onPhase();
         }
     }
     
@@ -118,8 +240,12 @@ class SoloJanController implements JanController {
         if (playerTable.size() != 4) {
             throw new IllegalArgumentException("Invalid player table size - " + playerTable.size());
         }
+        if (_onGame) {
+            throw new JanException("Game is already started.");
+        }
         
         synchronized (_GAME_INFO_LOCK) {
+            _onGame = true;
             _info.clear();
             
             // 席決めと山積み
@@ -139,6 +265,17 @@ class SoloJanController implements JanController {
             _info.setDeckIndex(13 * 4);
             _info.setRemainCount(70);
             
+            // 聴牌判定
+            for (final Wind wind : Wind.values()) {
+                if (playerTable.get(wind).getType() == PlayerType.COM) {
+                    // NPCはツモ切り専用
+                    _completeWait.put(wind, new ArrayList<JanPai>());
+                }
+                else {
+                    _completeWait.put(wind, HandCheckUtil.getCompletableJanPaiList(getHandMap(wind)));
+                }
+            }
+            
             // 1巡目
             _firstPhase = true;
             _info.setActiveWind(Wind.TON);
@@ -152,11 +289,65 @@ class SoloJanController implements JanController {
      * 牌を切る
      * 
      * @param target 対象牌。
+     * @throws CallableException 副露が可能。
      */
-    private void discardCore(final JanPai target) {
-        _info.addDiscard(_info.getActiveWind(), target);
+    private void discardCore(final JanPai target) throws CallableException {
+        final Wind activeWind = _info.getActiveWind();
+        _info.addDiscard(activeWind, target);
         _info.setActiveDiscard(target);
-        // TODO 鳴き処理
+        
+        Wind targetWind = activeWind.getNext();
+        while (targetWind != activeWind) {
+            if (_info.getPlayer(targetWind).getType() != PlayerType.COM) {
+                final List<CallType> callableList = getCallableList(targetWind, target);
+                if (!callableList.isEmpty()) {
+                    throw new CallableException(callableList);
+                }
+            }
+            targetWind = targetWind.getNext();
+        }
+    }
+    
+    /**
+     * 可能な副露リストを取得
+     * 
+     * @param wind 判定対象の風。
+     * @param discard 捨て牌。
+     * @return 可能な副露リスト。
+     */
+    private List<CallType> getCallableList(final Wind wind, final JanPai discard) {
+        final List<CallType> callTypeList = new ArrayList<>();
+        // TODO 副露対応
+        if (_completeWait.get(wind).contains(discard)) {
+            callTypeList.add(CallType.RON);
+        }
+        return callTypeList;
+    }
+    
+    /**
+     * プレイヤーの手牌マップを取得
+     * 
+     * @param wind プレイヤーの風。
+     * @return プレイヤーの手牌マップ。
+     */
+    private Map<JanPai, Integer> getHandMap(final Wind wind) {
+        final Map<JanPai, Integer> hand = _info.getHand(wind).getMenZenMap();
+        JanPaiUtil.cleanJanPaiMap(hand);
+        return hand;
+    }
+    
+    /**
+     * 指定牌込みでプレイヤーの手牌マップを取得
+     * 
+     * @param wind プレイヤーの風。
+     * @param source 手牌に追加する牌。
+     * @return プレイヤーの手牌マップ。
+     */
+    private Map<JanPai, Integer> getHandMap(final Wind wind, final JanPai source) {
+        final Map<JanPai, Integer> hand = _info.getHand(wind).getMenZenMap();
+        JanPaiUtil.addJanPai(hand, source, 1);
+        JanPaiUtil.cleanJanPaiMap(hand);
+        return hand;
     }
     
     /**
@@ -173,10 +364,12 @@ class SoloJanController implements JanController {
     /**
      * 巡目ごとの処理
      * 
+     * @throws CallableException 副露が可能。
      * @throws GameSetException 局が終了した。
      */
-    private void onPhase() throws GameSetException {
+    private void onPhase() throws CallableException, GameSetException {
         if (_info.getRemainCount() == 0) {
+            _onGame = false;
             throw new GameSetException(GameSetStatus.GAME_OVER);
         }
         
@@ -217,9 +410,19 @@ class SoloJanController implements JanController {
     private JanInfo _info = new JanInfo();
     
     /**
+     * ゲーム中か
+     */
+    private volatile boolean _onGame = false;
+    
+    /**
      * 初巡フラグ
      */
     private volatile boolean _firstPhase = true;
+    
+    /**
+     * 和了の待ち
+     */
+    private Map<Wind, List<JanPai>> _completeWait = Collections.synchronizedMap(new TreeMap<Wind, List<JanPai>>());
     
 }
 

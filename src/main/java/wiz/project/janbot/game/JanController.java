@@ -21,9 +21,33 @@ import wiz.project.janbot.game.exception.JanException;
 interface JanController {
     
     /**
+     * 副露
+     * 
+     * @param playerName プレイヤー名。
+     * @param type 副露タイプ。
+     * @throws JanException 例外イベント。
+     */
+    public void call(final String playerName, final CallType type) throws JanException;
+    
+    /**
+     * 和了 (ロン)
+     * 
+     * @param playerName プレイヤー名。
+     * @throws JanException 例外イベント。
+     */
+    public void completeRon(final String playerName) throws JanException;
+    
+    /**
+     * 和了 (ツモ)
+     * 
+     * @throws JanException 例外イベント。
+     */
+    public void completeTsumo() throws JanException;
+    
+    /**
      * 打牌 (ツモ切り)
      * 
-     * @throws JanException 処理に失敗。
+     * @throws JanException 例外イベント。
      */
     public void discard() throws JanException;
     
@@ -31,7 +55,7 @@ interface JanController {
      * 打牌 (手出し)
      * 
      * @param target 捨て牌。
-     * @throws JanException 処理に失敗。
+     * @throws JanException 例外イベント。
      */
     public void discard(final JanPai target) throws JanException;
     
@@ -43,11 +67,18 @@ interface JanController {
     public JanInfo getGameInfo();
     
     /**
+     * 次のプレイヤーの打牌へ
+     * 
+     * @throws JanException 例外イベント。
+     */
+    public void next() throws JanException;
+    
+    /**
      * 開始
      * 
      * @param deck 牌山。
      * @param playerTable プレイヤーテーブル。
-     * @throws JanException 処理に失敗。
+     * @throws JanException 例外イベント。
      */
     public void start(final List<JanPai> deck, final Map<Wind, Player> playerTable) throws JanException;
     
