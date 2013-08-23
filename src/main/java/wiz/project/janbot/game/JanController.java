@@ -36,6 +36,13 @@ interface JanController {
     public void discard(final JanPai target) throws JanException;
     
     /**
+     * ゲーム情報を取得
+     * 
+     * @return ゲーム情報。
+     */
+    public JanInfo getGameInfo();
+    
+    /**
      * 開始
      * 
      * @param deck 牌山。

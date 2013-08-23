@@ -40,8 +40,8 @@ public class GameAnnouncer implements Observer {
      */
     public void update(final Observable target, final Object param) {
         if (target instanceof JanInfo) {
-            if (param instanceof AnnounceType) {
-                updateOnSolo((JanInfo)target, (AnnounceType)param);
+            if (param instanceof GameAnnounceType) {
+                updateOnSolo((JanInfo)target, (GameAnnounceType)param);
             }
         }
     }
@@ -53,7 +53,7 @@ public class GameAnnouncer implements Observer {
      * 
      * @param info 麻雀ゲーム情報。
      */
-    protected void updateOnSolo(final JanInfo info, final AnnounceType type) {
+    protected void updateOnSolo(final JanInfo info, final GameAnnounceType type) {
         if (info == null) {
             throw new NullPointerException("Game information is null.");
         }
@@ -67,6 +67,9 @@ public class GameAnnouncer implements Observer {
         final List<String> messageList = new ArrayList<>();
         if (type.isAnnounceField()) {
             messageList.add(convertFieldToString(info));
+        }
+        if (type.isAnnounceRiverSingle()) {
+            messageList.add(convertRiverToString(info.getActiveRiver()));
         }
         if (type.isAnnounceHand()) {
             final StringBuilder buf = new StringBuilder();
@@ -137,6 +140,28 @@ public class GameAnnouncer implements Observer {
                 }
                 buf.append(COLOR_FLAG);
             }
+        }
+        return buf.toString();
+    }
+    
+    /**
+     * 捨て牌リストを文字列に変換
+     * 
+     * @param river 捨て牌リスト。
+     * @return 変換結果。
+     */
+    private String convertRiverToString(final List<JanPai> river) {
+        final StringBuilder buf = new StringBuilder();
+        int count = 1;
+        for (final JanPai pai : river) {
+            buf.append(COLOR_FLAG).append(getColorCode(pai));
+            buf.append(pai);
+            buf.append(COLOR_FLAG);
+            
+            if (count % 6 == 0) {
+                buf.append(" ");
+            }
+            count++;
         }
         return buf.toString();
     }

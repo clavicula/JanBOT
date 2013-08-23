@@ -27,6 +27,11 @@ public final class JanInfo extends Observable implements Cloneable {
      * コンストラクタ
      */
     public JanInfo() {
+        for (final Wind wind : Wind.values()) {
+            _playerTable.put(wind, new Player());
+            _handTable.put(wind, new Hand());
+            _riverTable.put(wind, new ArrayList<JanPai>());
+        }
     }
     
     /**
@@ -39,16 +44,57 @@ public final class JanInfo extends Observable implements Cloneable {
             _playerTable = deepCopyMap(source._playerTable);
             _deck = deepCopyList(source._deck);
             _deckIndex = source._deckIndex;
+            _wanPai = source._wanPai.clone();
             _fieldWind = source._fieldWind;
             _activeWind = source._activeWind;
             _remainCount = source._remainCount;
-            _handTable = deepCopyMap(source._handTable);
             _activeTsumo = source._activeTsumo;
             _activeDiscard = source._activeDiscard;
+            
+            for (final Map.Entry<Wind, Hand> entry : source._handTable.entrySet()) {
+                _handTable.put(entry.getKey(), entry.getValue().clone());
+            }
+            for (final Map.Entry<Wind, List<JanPai>> entry : source._riverTable.entrySet()) {
+                _riverTable.put(entry.getKey(), deepCopyList(entry.getValue()));
+            }
         }
     }
     
     
+    
+    /**
+     * 捨て牌を追加
+     * 
+     * @param wind 風。
+     * @param discard 捨て牌。
+     */
+    public void addDiscard(final Wind wind, final JanPai discard) {
+        if (wind != null) {
+            if (discard != null) {
+                _riverTable.get(wind).add(discard);
+            }
+        }
+    }
+    
+    /**
+     * フィールドを全消去
+     */
+    public void clear() {
+        _deck.clear();
+        _deckIndex = 0;
+        _wanPai = new WanPai();
+        _fieldWind = Wind.TON;
+        _activeWind = Wind.TON;
+        _remainCount = 0;
+        _activeTsumo = JanPai.HAKU;
+        _activeDiscard = JanPai.HAKU;
+        
+        for (final Wind wind : Wind.values()) {
+            _playerTable.put(wind, new Player());
+            _handTable.put(wind, new Hand());
+            _riverTable.put(wind, new ArrayList<JanPai>());
+        }
+    }
     
     /**
      * オブジェクトを複製 (ディープコピー)
@@ -66,7 +112,6 @@ public final class JanInfo extends Observable implements Cloneable {
     public void decreaseRemainCount() {
         if (_remainCount > 0) {
             _remainCount--;
-            setChanged();
         }
     }
     
@@ -85,7 +130,7 @@ public final class JanInfo extends Observable implements Cloneable {
      * @return アクティブプレイヤーの手牌。
      */
     public Hand getActiveHand() {
-        return _handTable.get(_activeWind).clone();
+        return getHand(_activeWind);
     }
     
     /**
@@ -95,6 +140,15 @@ public final class JanInfo extends Observable implements Cloneable {
      */
     public Player getActivePlayer() {
         return _playerTable.get(_activeWind);
+    }
+    
+    /**
+     * アクティブプレイヤーの捨て牌リストを取得
+     * 
+     * @return アクティブプレイヤーの捨て牌リスト。
+     */
+    public List<JanPai> getActiveRiver() {
+        return getRiver(_activeWind);
     }
     
     /**
@@ -143,12 +197,18 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
-     * 手牌テーブルを取得
+     * 手牌を取得
      * 
-     * @return 手牌テーブル。
+     * @param wind 風。
+     * @return 手牌。
      */
-    public Map<Wind, Hand> getHandTable() {
-        return deepCopyMap(_handTable);
+    public Hand getHand(final Wind wind) {
+        if (wind != null) {
+            return _handTable.get(wind).clone();
+        }
+        else {
+            return new Hand();
+        }
     }
     
     /**
@@ -179,6 +239,21 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
+     * 捨て牌リストを取得
+     * 
+     * @param wind 風。
+     * @return 捨て牌リスト。
+     */
+    public List<JanPai> getRiver(final Wind wind) {
+        if (wind != null) {
+            return deepCopyList(_riverTable.get(wind));
+        }
+        else {
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
      * 王牌を取得
      * 
      * @return 王牌。
@@ -195,6 +270,17 @@ public final class JanInfo extends Observable implements Cloneable {
     }
     
     /**
+     * 監視者に状態を通知 (強制)
+     * 
+     * @param param 通知パラメータ。
+     */
+    @Override
+    public void notifyObservers(final Object param) {
+        setChanged();
+        super.notifyObservers(param);
+    }
+    
+    /**
      * 直前の捨て牌を設定
      * 
      * @param pai 直前の捨て牌。
@@ -206,7 +292,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _activeDiscard = JanPai.HAKU;
         }
-        setChanged();
     }
     
     /**
@@ -221,7 +306,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _activeTsumo = JanPai.HAKU;
         }
-        setChanged();
     }
     
     /**
@@ -236,7 +320,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _activeWind = Wind.TON;
         }
-        setChanged();
     }
     
     /**
@@ -244,7 +327,6 @@ public final class JanInfo extends Observable implements Cloneable {
      */
     public void setActiveWindToNext() {
         _activeWind = _activeWind.getNext();
-        setChanged();
     }
     
     /**
@@ -259,7 +341,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _deck.clear();
         }
-        setChanged();
     }
     
     /**
@@ -280,7 +361,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _deckIndex = 0;
         }
-        setChanged();
     }
     
     /**
@@ -295,22 +375,23 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _fieldWind = Wind.TON;
         }
-        setChanged();
     }
     
     /**
-     * 手牌テーブルを設定
+     * 手牌を設定
      * 
-     * @param handTable 手牌テーブル。
+     * @param wind 風。
+     * @param hand 手牌。
      */
-    public void setHandTable(final Map<Wind, Hand> handTable) {
-        if (handTable != null) {
-            _handTable = deepCopyMap(handTable);
+    public void setHand(final Wind wind, final Hand hand) {
+        if (wind != null) {
+            if (hand != null) {
+                _handTable.put(wind, hand.clone());
+            }
+            else {
+                _handTable.put(wind, new Hand());
+            }
         }
-        else {
-            _handTable.clear();
-        }
-        setChanged();
     }
     
     /**
@@ -325,7 +406,6 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _playerTable.clear();
         }
-        setChanged();
     }
     
     /**
@@ -340,7 +420,23 @@ public final class JanInfo extends Observable implements Cloneable {
         else {
             _remainCount = 0;
         }
-        setChanged();
+    }
+    
+    /**
+     * 捨て牌リストを設定
+     * 
+     * @param wind 風。
+     * @param river 捨て牌リスト。
+     */
+    public void setRiver(final Wind wind, final List<JanPai> river) {
+        if (wind != null) {
+            if (river != null) {
+                _riverTable.put(wind, deepCopyList(river));
+            }
+            else {
+                _riverTable.put(wind, new ArrayList<JanPai>());
+            }
+        }
     }
     
     /**
@@ -417,9 +513,14 @@ public final class JanInfo extends Observable implements Cloneable {
     private int _remainCount = 0;
     
     /**
-     * 手牌セット
+     * 手牌テーブル
      */
     private Map<Wind, Hand> _handTable = new TreeMap<>();
+    
+    /**
+     * 捨て牌テーブル
+     */
+    private Map<Wind, List<JanPai>> _riverTable = new TreeMap<>();
     
     /**
      * 直前のツモ牌

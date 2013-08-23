@@ -128,6 +128,29 @@ public final class GameMaster {
     }
     
     /**
+     * 情報表示
+     * 
+     * @param type 情報表示タイプ。
+     */
+    public void onInfo(final GameAnnounceType type) {
+        if (type == null) {
+            throw new NullPointerException("Announce type is null.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            _controller.getGameInfo().notifyObservers(type);
+        }
+    }
+    
+    /**
      * 開始処理 (ソロ)
      * 
      * @param playerName プレイヤー名。
@@ -278,7 +301,7 @@ public final class GameMaster {
      */
     private JanController createJanController(final boolean solo) {
         if (solo) {
-            return new SoloJanController();
+            return new SoloJanController(_announcer);
         }
         else {
             // TODO ネトマ未実装
@@ -350,6 +373,11 @@ public final class GameMaster {
      * ゲームコントローラ
      */
     private JanController _controller = null;
+    
+    /**
+     * ゲーム実況者
+     */
+    private GameAnnouncer _announcer = new GameAnnouncer();
     
     /**
      * ゲームの状態

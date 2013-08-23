@@ -18,6 +18,12 @@ final class Player implements Serializable {
     
     /**
      * コンストラクタ
+     */
+    public Player() {
+    }
+    
+    /**
+     * コンストラクタ
      * 
      * @param name 名前。
      * @param type タイプ。

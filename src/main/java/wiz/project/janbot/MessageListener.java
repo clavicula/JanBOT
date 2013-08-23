@@ -11,6 +11,7 @@ import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
 import org.pircbotx.hooks.events.PrivateMessageEvent;
 
+import wiz.project.janbot.game.GameAnnounceType;
 import wiz.project.janbot.game.GameMaster;
 
 
@@ -57,6 +58,15 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         }
         else if (message.startsWith("jantest d ")) {
             GameMaster.getInstance().onDiscard(message.substring(10));
+        }
+        else if (message.equals("jantest i")) {
+            GameMaster.getInstance().onInfo(GameAnnounceType.FIELD);
+        }
+        else if (message.equals("jantest r")) {
+            GameMaster.getInstance().onInfo(GameAnnounceType.RIVER);
+        }
+        else if (message.equals("jantest i r") || message.equals("jantest r i")) {
+            GameMaster.getInstance().onInfo(GameAnnounceType.FIELD_RIVER);
         }
     }
     

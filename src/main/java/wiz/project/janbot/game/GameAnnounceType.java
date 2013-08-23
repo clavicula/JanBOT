@@ -11,7 +11,7 @@ package wiz.project.janbot.game;
 /**
  * 実況タイプ
  */
-enum AnnounceType {
+public enum GameAnnounceType {
     
     /**
      * 手牌 (ツモ牌抜き)
@@ -95,6 +95,52 @@ enum AnnounceType {
         case HAND_TSUMO:
         case HAND_TSUMO_FIELD:
         case HAND_FIELD_RIVER:
+        case HAND_TSUMO_FIELD_RIVER_URADORA:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
+     * 捨て牌を実況するか
+     * 
+     * @return 判定結果。
+     */
+    public boolean isAnnounceRiverSingle() {
+        switch (this) {
+        case HAND_FIELD_RIVER:
+        case HAND_TSUMO_FIELD_RIVER_URADORA:
+        case RIVER:
+        case FIELD_RIVER:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
+     * 全捨て牌を実況するか
+     * 
+     * @return 判定結果。
+     */
+    public boolean isAnnounceRiverAll() {
+        switch (this) {
+        case RIVER_ALL:
+        case FIELD_RIVER_ALL:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
+     * 裏ドラを実況するか
+     * 
+     * @return 判定結果。
+     */
+    public boolean isAnnounceUraDora() {
+        switch (this) {
         case HAND_TSUMO_FIELD_RIVER_URADORA:
             return true;
         default:
