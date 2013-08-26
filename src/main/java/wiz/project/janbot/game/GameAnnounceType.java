@@ -29,6 +29,11 @@ public enum GameAnnounceType {
     GAME_OVER,
     
     /**
+     * 副露可能
+     */
+    CALLABLE,
+    
+    /**
      * ロン可能
      */
     CALLABLE_RON,
@@ -42,6 +47,16 @@ public enum GameAnnounceType {
      * 手牌 (ツモ牌込み)
      */
     HAND_TSUMO,
+    
+    /**
+     * 副露後の手牌 (ツモ牌抜き)
+     */
+    HAND_AFTER_CALL,
+    
+    /**
+     * 副露後の手牌 (ツモ牌込み)
+     */
+    HAND_TSUMO_AFTER_CALL,
     
     /**
      * 手牌と場情報 (ツモ牌込み)
@@ -76,6 +91,21 @@ public enum GameAnnounceType {
     
     
     /**
+     * 副露後の打牌か
+     * 
+     * @return 判定結果。
+     */
+    public boolean isAfterCall() {
+        switch (this) {
+        case HAND_AFTER_CALL:
+        case HAND_TSUMO_AFTER_CALL:
+            return true;
+        default:
+            return false;
+        }
+    }
+    
+    /**
      * 当たり牌を実況するか
      * 
      * @return 判定結果。
@@ -96,8 +126,10 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceField() {
         switch (this) {
+        case COMPLETE_RON:
         case COMPLETE_TSUMO:
         case GAME_OVER:
+        case CALLABLE:
         case CALLABLE_RON:
         case HAND_TSUMO_FIELD:
         case FIELD:
@@ -116,11 +148,15 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceHand() {
         switch (this) {
+        case COMPLETE_RON:
         case COMPLETE_TSUMO:
         case GAME_OVER:
+        case CALLABLE:
         case CALLABLE_RON:
         case HAND:
         case HAND_TSUMO:
+        case HAND_AFTER_CALL:
+        case HAND_TSUMO_AFTER_CALL:
         case HAND_TSUMO_FIELD:
             return true;
         default:
@@ -135,6 +171,7 @@ public enum GameAnnounceType {
      */
     public boolean isAnnounceRiverSingle() {
         switch (this) {
+        case COMPLETE_RON:
         case COMPLETE_TSUMO:
         case GAME_OVER:
         case RIVER:
@@ -184,6 +221,7 @@ public enum GameAnnounceType {
         switch (this) {
         case COMPLETE_TSUMO:
         case HAND_TSUMO:
+        case HAND_TSUMO_AFTER_CALL:
         case HAND_TSUMO_FIELD:
             return true;
         default:
@@ -198,6 +236,7 @@ public enum GameAnnounceType {
      */
     public boolean isCallable() {
         switch (this) {
+        case CALLABLE:
         case CALLABLE_RON:
             return true;
         default:

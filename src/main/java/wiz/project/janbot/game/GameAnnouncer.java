@@ -7,7 +7,9 @@
 package wiz.project.janbot.game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -15,6 +17,7 @@ import wiz.project.jan.Hand;
 import wiz.project.jan.JanPai;
 import wiz.project.jan.MenTsu;
 import wiz.project.jan.MenTsuType;
+import wiz.project.jan.Wind;
 import wiz.project.janbot.JanBOT;
 
 
@@ -75,6 +78,7 @@ public class GameAnnouncer implements Observer {
             throw new NullPointerException("Announce type is null.");
         }
         
+        final Wind playerWind = getPlayerWind(info);
         final List<String> messageList = new ArrayList<>();
         if (type.isCallable()) {
             final StringBuilder buf = new StringBuilder();
@@ -82,27 +86,24 @@ public class GameAnnouncer implements Observer {
             if (type.isCallableRon()) {
                 buf.append("ロン可能です");
             }
+            else {
+                buf.append("鳴けそうです");
+            }
             messageList.add(buf.toString());
+            messageList.add("(詳細：「jan help」を参照)");
         }
         
+        if (type.isAfterCall()) {
+            messageList.add("捨て牌を選んでください");
+        }
         if (type.isAnnounceField()) {
-            messageList.add(convertFieldToString(info));
+            messageList.add(convertFieldToString(playerWind, info));
         }
-        
         if (type.isAnnounceRiverSingle()) {
-            messageList.add(convertRiverToString(info.getActiveRiver()));
+            messageList.add(convertRiverToString(info.getRiver(playerWind)));
         }
-        
         if (type.isAnnounceHand()) {
-            final StringBuilder buf = new StringBuilder();
-            buf.append(convertHandToString(info.getActiveHand()));
-            if (type.isAnnounceTsumo()) {
-                buf.append(" ").append(convertJanPaiToString(info.getActiveTsumo()));
-            }
-            else if (type.isAnnounceActiveDiscard()) {
-                buf.append(" ").append(convertJanPaiToString(info.getActiveDiscard()));
-            }
-            messageList.add(buf.toString());
+            messageList.add(convertHandToString(playerWind, info, type));
         }
         
         if (type == GameAnnounceType.COMPLETE_RON) {
@@ -110,6 +111,9 @@ public class GameAnnouncer implements Observer {
         }
         else if (type == GameAnnounceType.COMPLETE_TSUMO) {
             messageList.add("---- ツモ和了 ----");
+        }
+        else if (type == GameAnnounceType.GAME_OVER) {
+            messageList.add("---- 流局 ----");
         }
         
         JanBOT.getInstance().println(messageList);
@@ -120,13 +124,14 @@ public class GameAnnouncer implements Observer {
     /**
      * 場情報を文字列に変換
      * 
+     * @param wind 対象プレイヤーの風。
      * @param info ゲーム情報。
      * @return 変換結果。
      */
-    private String convertFieldToString(final JanInfo info) {
+    private String convertFieldToString(final Wind wind, final JanInfo info) {
         final StringBuilder buf = new StringBuilder();
         buf.append("場風：").append(info.getFieldWind()).append("   ");
-        buf.append("自風：").append(info.getActiveWind()).append("   ");
+        buf.append("自風：").append(wind).append("   ");
         buf.append("ドラ：");
         for (final JanPai pai : info.getWanPai().getDoraList()) {
             buf.append(convertJanPaiToString(pai));
@@ -137,23 +142,21 @@ public class GameAnnouncer implements Observer {
     }
     
     /**
-     * 手牌を文字列に変換
+     * 副露牌を文字列に変換
      * 
      * @param hand 手牌。
      * @return 変換結果。
      */
-    private String convertHandToString(final Hand hand) {
+    private String convertFixedMenTsuToString(final Hand hand) {
         final StringBuilder buf = new StringBuilder();
-        for (final JanPai pai : hand.getMenZenList()) {
-            buf.append(convertJanPaiToString(pai));
-        }
-        
         if (hand.getFixedMenTsuCount() == 0) {
             return buf.toString();
         }
         
         buf.append(" ");
-        for (final MenTsu fixedMenTsu : hand.getFixedMenTsuList()) {
+        final List<MenTsu> fixedMenTsuList = hand.getFixedMenTsuList();
+        Collections.reverse(fixedMenTsuList);
+        for (final MenTsu fixedMenTsu : fixedMenTsuList) {
             buf.append(" ");
             final List<JanPai> sourceList = fixedMenTsu.getSource();
             if (fixedMenTsu.getMenTsuType() == MenTsuType.KAN_DARK) {
@@ -173,6 +176,42 @@ public class GameAnnouncer implements Observer {
     }
     
     /**
+     * 手牌を文字列に変換
+     * 
+     * @param wind 対象プレイヤーの風。
+     * @param info ゲーム情報。
+     * @param type 実況タイプ。
+     * @return 変換結果。
+     */
+    private String convertHandToString(final Wind wind, final JanInfo info, final GameAnnounceType type) {
+        final Hand hand = info.getHand(wind);
+        final StringBuilder buf = new StringBuilder();
+        buf.append(convertMenzenHandToString(hand));
+        if (type.isAnnounceTsumo()) {
+            buf.append(" ").append(convertJanPaiToString(info.getActiveTsumo()));
+        }
+        else if (type.isAnnounceActiveDiscard()) {
+            buf.append(" ").append(convertJanPaiToString(info.getActiveDiscard()));
+        }
+        buf.append(convertFixedMenTsuToString(hand));
+        return buf.toString();
+    }
+    
+    /**
+     * 面前手牌を文字列に変換
+     * 
+     * @param hand 手牌。
+     * @return 変換結果。
+     */
+    private String convertMenzenHandToString(final Hand hand) {
+        final StringBuilder buf = new StringBuilder();
+        for (final JanPai pai : hand.getMenZenList()) {
+            buf.append(convertJanPaiToString(pai));
+        }
+        return buf.toString();
+    }
+    
+    /**
      * 捨て牌リストを文字列に変換
      * 
      * @param river 捨て牌リスト。
@@ -181,11 +220,12 @@ public class GameAnnouncer implements Observer {
     private String convertRiverToString(final List<JanPai> river) {
         final StringBuilder buf = new StringBuilder();
         int count = 1;
+        buf.append("捨牌：");
         for (final JanPai pai : river) {
             buf.append(convertJanPaiToString(pai));
             
             if (count % 6 == 0) {
-                buf.append(" ");
+                buf.append("  ");
             }
             count++;
         }
@@ -240,6 +280,21 @@ public class GameAnnouncer implements Observer {
         default:
             return "01";  // 黒
         }
+    }
+    
+    /**
+     * プレイヤーの風を取得
+     * 
+     * @param info ゲーム情報。
+     * @return プレイヤーの風。
+     */
+    private Wind getPlayerWind(final JanInfo info) {
+        for (final Map.Entry<Wind, Player> entry : info.getPlayerTable().entrySet()) {
+            if (entry.getValue().getType() != PlayerType.COM) {
+                return entry.getKey();
+            }
+        }
+        throw new InternalError();
     }
     
     

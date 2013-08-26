@@ -25,9 +25,10 @@ interface JanController {
      * 
      * @param playerName プレイヤー名。
      * @param type 副露タイプ。
+     * @param target 牌指定。nullを許可する。
      * @throws JanException 例外イベント。
      */
-    public void call(final String playerName, final CallType type) throws JanException;
+    public void call(final String playerName, final CallType type, final JanPai target) throws JanException;
     
     /**
      * 和了 (ロン)

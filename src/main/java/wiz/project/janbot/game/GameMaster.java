@@ -7,6 +7,8 @@
 package wiz.project.janbot.game;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +22,6 @@ import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
 import wiz.project.jan.util.JanPaiUtil;
 import wiz.project.janbot.JanBOT;
-import wiz.project.janbot.game.exception.BoneheadException;
 import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
 
@@ -62,8 +63,117 @@ public final class GameMaster {
     }
     
     /**
+     * チー処理
+     * 
+     * @param playerName プレイヤー名。
+     * @param target 先頭牌。
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onCallChi(final String playerName, final String target) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (target == null) {
+            throw new NullPointerException("Head pai is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new NullPointerException("Player name is empty.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            if (!_controller.getGameInfo().isActivePlayer(playerName)) {
+                _controller.call(playerName, CallType.CHI, convertStringToJanPai(target));
+            }
+        }
+    }
+    
+    /**
+     * カン処理
+     * 
+     * @param playerName プレイヤー名。
+     * @param target 対象牌。
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onCallKan(final String playerName, final String target) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (target == null) {
+            throw new NullPointerException("Call target is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new NullPointerException("Player name is empty.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            final JanPai targetPai = convertStringToJanPai(target);
+            final JanInfo info = _controller.getGameInfo();
+            if (!info.isActivePlayer(playerName)) {
+                // 大明カン
+                _controller.call(playerName, CallType.KAN_LIGHT, targetPai);
+            }
+            else {
+                if (info.getActiveHand().getMenZenMap().get(targetPai) < 3) {
+                    // 加カン
+                    _controller.call(playerName, CallType.KAN_ADD, targetPai);
+                }
+                else {
+                    // 暗カン
+                    _controller.call(playerName, CallType.KAN_DARK, targetPai);
+                }
+            }
+        }
+    }
+    
+    /**
+     * ポン処理
+     * 
+     * @param playerName プレイヤー名。
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onCallPon(final String playerName) throws JanException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new NullPointerException("Player name is empty.");
+        }
+        
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            if (!_controller.getGameInfo().isActivePlayer(playerName)) {
+                _controller.call(playerName, CallType.PON, null);
+            }
+        }
+    }
+    
+    /**
      * ロン和了処理
      * 
+     * @param playerName プレイヤー名。
      * @throws JanException ゲーム処理エラー。
      */
     public void onCompleteRon(final String playerName) throws JanException {
@@ -82,22 +192,17 @@ public final class GameMaster {
             }
         }
         
-        try {
-            synchronized (_CONTROLLER_LOCK) {
-                if (!_controller.getGameInfo().isActivePlayer(playerName)) {
-                    _controller.completeRon(playerName);
-                }
+        synchronized (_CONTROLLER_LOCK) {
+            if (!_controller.getGameInfo().isActivePlayer(playerName)) {
+                _controller.completeRon(playerName);
             }
-        }
-        catch (final BoneheadException e) {
-            JanBOT.getInstance().println("(  ´∀｀) ＜ チョンボ");
-            return;
         }
     }
     
     /**
      * ツモ和了処理
      * 
+     * @param playerName プレイヤー名。
      * @throws JanException ゲーム処理エラー。
      */
     public void onCompleteTsumo(final String playerName) throws JanException {
@@ -116,16 +221,27 @@ public final class GameMaster {
             }
         }
         
-        try {
-            synchronized (_CONTROLLER_LOCK) {
-                if (_controller.getGameInfo().isActivePlayer(playerName)) {
-                    _controller.completeTsumo();
-                }
+        synchronized (_CONTROLLER_LOCK) {
+            if (_controller.getGameInfo().isActivePlayer(playerName)) {
+                _controller.completeTsumo();
             }
         }
-        catch (final BoneheadException e) {
-            JanBOT.getInstance().println("(  ´∀｀) ＜ チョンボ");
-            return;
+    }
+    
+    /**
+     * 副露せずに続行
+     */
+    public void onContinue() throws JanException {
+        // 開始判定
+        synchronized (_STATUS_LOCK) {
+            if (_status.isIdle()) {
+                JanBOT.getInstance().println("--- Not started ---");
+                return;
+            }
+        }
+        
+        synchronized (_CONTROLLER_LOCK) {
+            _controller.next();
         }
     }
     
@@ -168,19 +284,11 @@ public final class GameMaster {
         }
         
         if (target.isEmpty()) {
-            // ユーザの指定ミスなので何もしない
-            return;
+            throw new InvalidInputException("Discard target is empty.");
         }
-        
-        try {
-            final JanPai targetPai = convertStringToJanPai(target);
-            synchronized (_CONTROLLER_LOCK) {
-                _controller.discard(targetPai);
-            }
-        }
-        catch (final InvalidInputException e) {
-            // ユーザの指定ミスなので何もしない
-            return;
+        final JanPai targetPai = convertStringToJanPai(target);
+        synchronized (_CONTROLLER_LOCK) {
+            _controller.discard(targetPai);
         }
     }
     
@@ -215,8 +323,76 @@ public final class GameMaster {
         }
         
         synchronized (_CONTROLLER_LOCK) {
-            _controller.getGameInfo().notifyObservers(type);
+            final JanInfo info = _controller.getGameInfo();
+            info.addObserver(_announcer);
+            info.notifyObservers(type);
         }
+    }
+    
+    /**
+     * リプレイ処理
+     * 
+     * @param playerName プレイヤー名。
+     * @throws JanException ゲーム処理エラー。
+     * @throws IOException ファイル入出力に失敗。
+     */
+    @SuppressWarnings("unchecked")
+    public void onReplay(final String playerName) throws JanException, IOException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new IllegalArgumentException("Player name is empty.");
+        }
+        
+        // 開始済み判定
+        synchronized (_STATUS_LOCK) {
+            if (!_status.isIdle()) {
+                JanBOT.getInstance().println("--- Already started ---");
+                return;
+            }
+            _status = GameStatus.PLAYING_SOLO;
+        }
+        
+        if (!Files.exists(Paths.get(DECK_SAVE_PATH)) ||
+            !Files.exists(Paths.get(PLAYER_TABLE_SAVE_PATH))) {
+            JanBOT.getInstance().println("--- Replay data is not found ---");
+            return;
+        }
+        
+        // 牌山と席順をロード
+        final List<JanPai> deck = (List<JanPai>)Serializer.read(DECK_SAVE_PATH);
+        final Map<Wind, Player> playerTable = (Map<Wind, Player>)Serializer.read(PLAYER_TABLE_SAVE_PATH);
+        
+        // プレイヤー名を差し替え
+        final Wind playerWind = getPlayerWind(playerTable);
+        playerTable.put(playerWind, new Player(playerName, PlayerType.HUMAN));
+        
+        // ゲーム開始
+        synchronized (_CONTROLLER_LOCK) {
+            _controller = createJanController(true);
+            _controller.start(deck, playerTable);
+        }
+    }
+    
+    /**
+     * リプレイ処理
+     * 
+     * @param playerName プレイヤー名。
+     * @param gameCode ゲームコード。
+     * @throws JanException ゲーム処理エラー。
+     * @throws IOException ファイル入出力に失敗。
+     */
+    public void onReplay(final String playerName, final String gameCode) throws JanException, IOException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
+        }
+        if (playerName.isEmpty()) {
+            throw new IllegalArgumentException("Player name is empty.");
+        }
+        
+        // TODO ゲーム指定リプレイ
+        onReplay(playerName);
     }
     
     /**
@@ -409,6 +585,21 @@ public final class GameMaster {
             playerTable.put(windList.remove(0), NPC_LIST.get(i));
         }
         return playerTable;
+    }
+    
+    /**
+     * プレイヤーの風を取得
+     * 
+     * @param playerTable プレイヤーテーブル。
+     * @return プレイヤーの風。
+     */
+    private Wind getPlayerWind(final Map<Wind, Player> playerTable) {
+        for (final Map.Entry<Wind, Player> entry : playerTable.entrySet()) {
+            if (entry.getValue().getType() != PlayerType.COM) {
+                return entry.getKey();
+            }
+        }
+        throw new InternalError();
     }
     
     

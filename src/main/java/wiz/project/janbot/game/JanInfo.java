@@ -307,7 +307,12 @@ public final class JanInfo extends Observable implements Cloneable {
         if (playerName == null) {
             return false;
         }
-        return _playerTable.values().contains(playerName);
+        for (final Player player : _playerTable.values()) {
+            if (player.getName().equals(playerName)) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
