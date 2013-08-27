@@ -437,6 +437,40 @@ public final class GameMaster {
         }
     }
     
+    /**
+     * 開始処理 (対戦)
+     * 
+     * @param playerNameList プレイヤー名のリスト。
+     * @throws JanException ゲーム処理エラー。
+     */
+    public void onStartVS(final List<String> playerNameList) throws JanException {
+        if (playerNameList == null) {
+            throw new NullPointerException("Player name list is null.");
+        }
+        if (playerNameList.isEmpty()) {
+            throw new IllegalArgumentException("Player name list is empty.");
+        }
+        
+        // 開始済み判定
+        synchronized (_STATUS_LOCK) {
+            if (!_status.isIdle()) {
+                IRCBOT.getInstance().println("--- Already started ---");
+                return;
+            }
+            _status = GameStatus.PLAYING_VS;
+        }
+        
+        // 牌山生成と席決め
+        final List<JanPai> deck = createDeck();
+        final Map<Wind, Player> playerTable = createPlayerTable(playerNameList);
+        
+        // ゲーム開始
+        synchronized (_CONTROLLER_LOCK) {
+            _controller = createJanController(false);
+            _controller.start(deck, playerTable);
+        }
+    }
+    
     
     
     /**
@@ -560,8 +594,7 @@ public final class GameMaster {
             return new SoloJanController(_announcer);
         }
         else {
-            // TODO ネトマ未対応
-            return null;
+            return new VSJanController();
         }
     }
     

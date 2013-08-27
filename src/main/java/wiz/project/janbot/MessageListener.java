@@ -124,7 +124,11 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             // 指定ミスに対しては何もしない
         }
         catch (final JanException e) {
-            // TODO ログ記録
+            IRCBOT.getInstance().println("(  ´∀｀) ＜ " + e.getMessage());
+        }
+        catch (final Throwable e) {
+            IRCBOT.getInstance().println("(  ´∀｀) ＜ " + e.getMessage());
+            throw e;
         }
     }
     

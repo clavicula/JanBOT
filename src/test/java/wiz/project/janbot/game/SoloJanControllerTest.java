@@ -31,8 +31,97 @@ public final class SoloJanControllerTest {
      * call() のテスト
      */
     @Test
-    public void testCall() {
-        // TODO 副露対応
+    public void testCall() throws JanException {
+        {
+            // エラー (ゲームが未開始)
+            final String playerName = TEST_PLAYER_NAME;
+            final CallType type = CallType.PON;
+            final JanPai target = null;
+            try {
+                final JanController controller = createJanController();
+                controller.call(playerName, type, target);
+                fail();
+            }
+            catch (final JanException e) {
+                assertEquals("Game is not started.", e.getMessage());
+            }
+        }
+        {
+            // エラー (不正なプレイヤー名)
+            final Wind playerWind = Wind.TON;
+            final Map<Wind, Player> playerTable = createPlayerTable(TEST_PLAYER_NAME, playerWind);
+            
+            final JanController controller = createJanController();
+            controller.start(createDeck(), playerTable);
+            
+            final String playerName = "不正なプレイヤー名";
+            final CallType type = CallType.PON;
+            final JanPai target = null;
+            try {
+                controller.call(playerName, type, target);
+                fail();
+            }
+            catch (final IllegalArgumentException e) {
+                assertEquals("Inavlid player name - " + playerName, e.getMessage());
+            }
+        }
+        {
+            // エラー (プレイヤー名が空文字列)
+            final Wind playerWind = Wind.TON;
+            final Map<Wind, Player> playerTable = createPlayerTable(TEST_PLAYER_NAME, playerWind);
+            
+            final JanController controller = createJanController();
+            controller.start(createDeck(), playerTable);
+            
+            final String playerName = "";
+            final CallType type = CallType.PON;
+            final JanPai target = null;
+            try {
+                controller.call(playerName, type, target);
+                fail();
+            }
+            catch (final IllegalArgumentException e) {
+                assertEquals("Player name is empty.", e.getMessage());
+            }
+        }
+        {
+            // エラー (プレイヤー名がNull)
+            final Wind playerWind = Wind.TON;
+            final Map<Wind, Player> playerTable = createPlayerTable(TEST_PLAYER_NAME, playerWind);
+            
+            final JanController controller = createJanController();
+            controller.start(createDeck(), playerTable);
+            
+            final String playerName = null;
+            final CallType type = CallType.PON;
+            final JanPai target = null;
+            try {
+                controller.call(playerName, type, target);
+                fail();
+            }
+            catch (final NullPointerException e) {
+                assertEquals("Player name is null.", e.getMessage());
+            }
+        }
+        {
+            // エラー (副露タイプがNull)
+            final String playerName = TEST_PLAYER_NAME;
+            final Wind playerWind = Wind.TON;
+            final Map<Wind, Player> playerTable = createPlayerTable(TEST_PLAYER_NAME, playerWind);
+            
+            final JanController controller = createJanController();
+            controller.start(createDeck(), playerTable);
+            
+            final CallType type = null;
+            final JanPai target = null;
+            try {
+                controller.call(playerName, type, target);
+                fail();
+            }
+            catch (final NullPointerException e) {
+                assertEquals("Player name is null.", e.getMessage());
+            }
+        }
     }
     
     /**

@@ -14,6 +14,11 @@ package wiz.project.janbot.game;
 public enum AnnounceFlag {
     
     /**
+     * ゲーム開始
+     */
+    GAME_START,
+    
+    /**
      * ロン和了
      */
     COMPLETE_RON,

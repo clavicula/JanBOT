@@ -45,11 +45,11 @@ public class GameAnnouncer implements Observer {
     @SuppressWarnings("unchecked")
     public void update(final Observable target, final Object param) {
         if (target instanceof JanInfo) {
-            if (param instanceof AnnounceFlag) {
-                updateOnSolo((JanInfo)target, EnumSet.of((AnnounceFlag)param));
-            }
-            else if (param instanceof EnumSet) {
+            if (param instanceof EnumSet) {
                 updateOnSolo((JanInfo)target, (EnumSet<AnnounceFlag>)param);
+            }
+            else if (param instanceof AnnounceFlag) {
+                updateOnSolo((JanInfo)target, EnumSet.of((AnnounceFlag)param));
             }
         }
     }
@@ -94,7 +94,7 @@ public class GameAnnouncer implements Observer {
             messageList.add("捨て牌を選んでください");
         }
         if (flagSet.contains(AnnounceFlag.FIELD)) {
-            messageList.add(convertFieldToString(playerWind, info));
+            messageList.add(convertFieldToString(playerWind, info, flagSet.contains(AnnounceFlag.URA_DORA)));
         }
         if (flagSet.contains(AnnounceFlag.RIVER_SINGLE)) {
             messageList.add(convertRiverToString(info.getRiver(playerWind)));
@@ -129,10 +129,10 @@ public class GameAnnouncer implements Observer {
         final StringBuilder buf = new StringBuilder();
         buf.append(convertJanPaiToString(discard)).append(" <- ");
         if (flagSet.contains(AnnounceFlag.CALLABLE_RON)) {
-            buf.append("ロン可能です  ");
+            buf.append("ロン可能です：  ");
         }
         else {
-            buf.append("鳴けそうです  ");
+            buf.append("鳴けそうです：  ");
         }
         if (flagSet.contains(AnnounceFlag.CALLABLE_RON)) {
             buf.append("[ロン]");
@@ -154,17 +154,29 @@ public class GameAnnouncer implements Observer {
      * 
      * @param wind 対象プレイヤーの風。
      * @param info ゲーム情報。
+     * @param includeUraDora 裏ドラを表示するか。
      * @return 変換結果。
      */
-    private String convertFieldToString(final Wind wind, final JanInfo info) {
+    private String convertFieldToString(final Wind wind, final JanInfo info, final boolean includeUraDora) {
         final StringBuilder buf = new StringBuilder();
         buf.append("場風：").append(info.getFieldWind()).append("   ");
         buf.append("自風：").append(wind).append("   ");
+        
+        final WanPai wanPai = info.getWanPai();
         buf.append("ドラ：");
-        for (final JanPai pai : info.getWanPai().getDoraList()) {
+        for (final JanPai pai : wanPai.getDoraList()) {
             buf.append(convertJanPaiToString(pai));
         }
         buf.append("   ");
+        
+        if (includeUraDora) {
+            buf.append("裏ドラ：");
+            for (final JanPai pai : wanPai.getUraDoraList()) {
+                buf.append(convertJanPaiToString(pai));
+            }
+            buf.append("   ");
+        }
+        
         buf.append("残り枚数：").append(info.getRemainCount());
         return buf.toString();
     }

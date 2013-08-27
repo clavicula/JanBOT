@@ -151,7 +151,6 @@ class SoloJanController implements JanController {
                     // フリテン
                     throw new BoneheadException("Furiten.");
                 }
-                // TODO 役確認
                 
                 _onGame = false;
                 _info.notifyObservers(ANNOUNCE_FLAG_COMPLETE_RON);
@@ -838,7 +837,7 @@ class SoloJanController implements JanController {
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_COMPLETE_RON =
         EnumSet.of(AnnounceFlag.COMPLETE_RON, AnnounceFlag.FIELD, AnnounceFlag.URA_DORA, AnnounceFlag.RIVER_SINGLE, AnnounceFlag.HAND, AnnounceFlag.ACTIVE_DISCARD);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_COMPLETE_TSUMO =
-        EnumSet.of(AnnounceFlag.COMPLETE_RON, AnnounceFlag.FIELD, AnnounceFlag.URA_DORA, AnnounceFlag.RIVER_SINGLE, AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO);
+        EnumSet.of(AnnounceFlag.COMPLETE_TSUMO, AnnounceFlag.FIELD, AnnounceFlag.URA_DORA, AnnounceFlag.RIVER_SINGLE, AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_HAND_TSUMO =
         EnumSet.of(AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_HAND_TSUMO_FIELD =
