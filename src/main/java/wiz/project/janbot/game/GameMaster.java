@@ -13,15 +13,16 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import wiz.io.serializer.Serializer;
+import wiz.project.ircbot.IRCBOT;
 import wiz.project.jan.JanPai;
 import wiz.project.jan.Wind;
 import wiz.project.jan.util.JanPaiUtil;
-import wiz.project.janbot.JanBOT;
 import wiz.project.janbot.game.exception.InvalidInputException;
 import wiz.project.janbot.game.exception.JanException;
 
@@ -83,7 +84,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -116,7 +117,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -158,7 +159,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -187,7 +188,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -216,7 +217,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -235,7 +236,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -254,7 +255,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -278,7 +279,7 @@ public final class GameMaster {
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -299,7 +300,7 @@ public final class GameMaster {
         synchronized (_STATUS_LOCK) {
             if (_status != GameStatus.IDLE) {
                 _status = GameStatus.IDLE;
-                JanBOT.getInstance().println("--- 終了 ---");
+                IRCBOT.getInstance().println("--- 終了 ---");
             }
         }
     }
@@ -307,17 +308,17 @@ public final class GameMaster {
     /**
      * 情報表示
      * 
-     * @param type 情報表示タイプ。
+     * @param flagSet 情報表示フラグ。
      */
-    public void onInfo(final GameAnnounceType type) {
-        if (type == null) {
-            throw new NullPointerException("Announce type is null.");
+    public void onInfo(final EnumSet<AnnounceFlag> flagSet) {
+        if (flagSet == null) {
+            throw new NullPointerException("Announce flag is null.");
         }
         
         // 開始判定
         synchronized (_STATUS_LOCK) {
             if (_status.isIdle()) {
-                JanBOT.getInstance().println("--- Not started ---");
+                IRCBOT.getInstance().println("--- Not started ---");
                 return;
             }
         }
@@ -325,7 +326,7 @@ public final class GameMaster {
         synchronized (_CONTROLLER_LOCK) {
             final JanInfo info = _controller.getGameInfo();
             info.addObserver(_announcer);
-            info.notifyObservers(type);
+            info.notifyObservers(flagSet);
         }
     }
     
@@ -348,7 +349,7 @@ public final class GameMaster {
         // 開始済み判定
         synchronized (_STATUS_LOCK) {
             if (!_status.isIdle()) {
-                JanBOT.getInstance().println("--- Already started ---");
+                IRCBOT.getInstance().println("--- Already started ---");
                 return;
             }
             _status = GameStatus.PLAYING_SOLO;
@@ -356,7 +357,7 @@ public final class GameMaster {
         
         if (!Files.exists(Paths.get(DECK_SAVE_PATH)) ||
             !Files.exists(Paths.get(PLAYER_TABLE_SAVE_PATH))) {
-            JanBOT.getInstance().println("--- Replay data is not found ---");
+            IRCBOT.getInstance().println("--- Replay data is not found ---");
             return;
         }
         
@@ -413,7 +414,7 @@ public final class GameMaster {
         // 開始済み判定
         synchronized (_STATUS_LOCK) {
             if (!_status.isIdle()) {
-                JanBOT.getInstance().println("--- Already started ---");
+                IRCBOT.getInstance().println("--- Already started ---");
                 return;
             }
             _status = GameStatus.PLAYING_SOLO;

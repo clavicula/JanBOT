@@ -34,8 +34,9 @@ public final class MockBOT {
         final String serverHost = "dummy.server.com";
         final int serverPort = 6667;
         final String channel = "#test-channel";
+        final JanCommandListener listener = createMessageListener();
         try {
-            JanBOT.getInstance().initialize(nickname, serverHost, serverPort, channel);
+            IRCBOT.getInstance().initialize(nickname, serverHost, serverPort, channel, listener);
         }
         catch (final IrcException | IOException e) {
             throw new InternalError(e.toString());
@@ -48,7 +49,7 @@ public final class MockBOT {
     public static void initialize() {
         try {
             final String fieldName = "_core";
-            setField(JanBOT.getInstance(), JanBOT.class, fieldName, new MockCore());
+            setField(IRCBOT.getInstance(), IRCBOT.class, fieldName, new MockCore());
         }
         catch (final NoSuchFieldException e) {
             throw new InternalError(e.toString());
@@ -56,6 +57,15 @@ public final class MockBOT {
     }
     
     
+    
+    /**
+     * メッセージリスナーを取得
+     * 
+     * @return メッセージリスナー。
+     */
+    private static JanCommandListener createMessageListener() {
+        return new JanCommandListener() {};
+    }
     
     /**
      * フィールド情報を取得

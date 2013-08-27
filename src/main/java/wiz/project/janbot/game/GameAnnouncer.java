@@ -8,6 +8,7 @@ package wiz.project.janbot.game;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -41,10 +42,14 @@ public class GameAnnouncer implements Observer {
      * @param target 監視対象。
      * @param param 更新パラメータ。
      */
+    @SuppressWarnings("unchecked")
     public void update(final Observable target, final Object param) {
         if (target instanceof JanInfo) {
-            if (param instanceof GameAnnounceType) {
-                updateOnSolo((JanInfo)target, (GameAnnounceType)param);
+            if (param instanceof AnnounceFlag) {
+                updateOnSolo((JanInfo)target, EnumSet.of((AnnounceFlag)param));
+            }
+            else if (param instanceof EnumSet) {
+                updateOnSolo((JanInfo)target, (EnumSet<AnnounceFlag>)param);
             }
         }
     }
@@ -69,50 +74,42 @@ public class GameAnnouncer implements Observer {
      * 状況更新時の処理
      * 
      * @param info 麻雀ゲーム情報。
+     * @param flagSet 実況フラグ。
      */
-    protected void updateOnSolo(final JanInfo info, final GameAnnounceType type) {
+    protected void updateOnSolo(final JanInfo info, final EnumSet<AnnounceFlag> flagSet) {
         if (info == null) {
             throw new NullPointerException("Game information is null.");
         }
-        if (type == null) {
+        if (flagSet == null) {
             throw new NullPointerException("Announce type is null.");
         }
         
         final Wind playerWind = getPlayerWind(info);
         final List<String> messageList = new ArrayList<>();
-        if (type.isCallable()) {
-            final StringBuilder buf = new StringBuilder();
-            buf.append(convertJanPaiToString(info.getActiveDiscard())).append(" <- ");
-            if (type.isCallableRon()) {
-                buf.append("ロン可能です");
-            }
-            else {
-                buf.append("鳴けそうです");
-            }
-            messageList.add(buf.toString());
+        if (isCallable(flagSet)) {
+            messageList.add(convertCallInfoToString(info.getActiveDiscard(), flagSet));
             messageList.add("(詳細：「jan help」を参照)");
         }
-        
-        if (type.isAfterCall()) {
+        if (flagSet.contains(AnnounceFlag.AFTER_CALL)) {
             messageList.add("捨て牌を選んでください");
         }
-        if (type.isAnnounceField()) {
+        if (flagSet.contains(AnnounceFlag.FIELD)) {
             messageList.add(convertFieldToString(playerWind, info));
         }
-        if (type.isAnnounceRiverSingle()) {
+        if (flagSet.contains(AnnounceFlag.RIVER_SINGLE)) {
             messageList.add(convertRiverToString(info.getRiver(playerWind)));
         }
-        if (type.isAnnounceHand()) {
-            messageList.add(convertHandToString(playerWind, info, type));
+        if (flagSet.contains(AnnounceFlag.HAND)) {
+            messageList.add(convertHandToString(playerWind, info, flagSet));
         }
         
-        if (type == GameAnnounceType.COMPLETE_RON) {
+        if (flagSet.contains(AnnounceFlag.COMPLETE_RON)) {
             messageList.add("---- ロン和了 ----");
         }
-        else if (type == GameAnnounceType.COMPLETE_TSUMO) {
+        else if (flagSet.contains(AnnounceFlag.COMPLETE_TSUMO)) {
             messageList.add("---- ツモ和了 ----");
         }
-        else if (type == GameAnnounceType.GAME_OVER) {
+        else if (flagSet.contains(AnnounceFlag.GAME_OVER)) {
             messageList.add("---- 流局 ----");
         }
         
@@ -120,6 +117,37 @@ public class GameAnnouncer implements Observer {
     }
     
     
+    
+    /**
+     * 副露情報を文字列に変換
+     * 
+     * @param discard 捨て牌。
+     * @param flagSet 実況フラグ。
+     * @return 変換結果。
+     */
+    private String convertCallInfoToString(final JanPai discard, final EnumSet<AnnounceFlag> flagSet) {
+        final StringBuilder buf = new StringBuilder();
+        buf.append(convertJanPaiToString(discard)).append(" <- ");
+        if (flagSet.contains(AnnounceFlag.CALLABLE_RON)) {
+            buf.append("ロン可能です  ");
+        }
+        else {
+            buf.append("鳴けそうです  ");
+        }
+        if (flagSet.contains(AnnounceFlag.CALLABLE_RON)) {
+            buf.append("[ロン]");
+        }
+        if (flagSet.contains(AnnounceFlag.CALLABLE_CHI)) {
+            buf.append("[チー]");
+        }
+        if (flagSet.contains(AnnounceFlag.CALLABLE_PON)) {
+            buf.append("[ポン]");
+        }
+        if (flagSet.contains(AnnounceFlag.CALLABLE_KAN)) {
+            buf.append("[カン]");
+        }
+        return buf.toString();
+    }
     
     /**
      * 場情報を文字列に変換
@@ -180,17 +208,17 @@ public class GameAnnouncer implements Observer {
      * 
      * @param wind 対象プレイヤーの風。
      * @param info ゲーム情報。
-     * @param type 実況タイプ。
+     * @param flagSet 実況フラグ。
      * @return 変換結果。
      */
-    private String convertHandToString(final Wind wind, final JanInfo info, final GameAnnounceType type) {
+    private String convertHandToString(final Wind wind, final JanInfo info, final EnumSet<AnnounceFlag> flagSet) {
         final Hand hand = info.getHand(wind);
         final StringBuilder buf = new StringBuilder();
         buf.append(convertMenzenHandToString(hand));
-        if (type.isAnnounceTsumo()) {
+        if (flagSet.contains(AnnounceFlag.ACTIVE_TSUMO)) {
             buf.append(" ").append(convertJanPaiToString(info.getActiveTsumo()));
         }
-        else if (type.isAnnounceActiveDiscard()) {
+        else if (flagSet.contains(AnnounceFlag.ACTIVE_DISCARD)) {
             buf.append(" ").append(convertJanPaiToString(info.getActiveDiscard()));
         }
         buf.append(convertFixedMenTsuToString(hand));
@@ -295,6 +323,21 @@ public class GameAnnouncer implements Observer {
             }
         }
         throw new InternalError();
+    }
+    
+    /**
+     * 副露可能か
+     * 
+     * @param flagSet 実況フラグ。
+     * @return 判定結果。
+     */
+    private boolean isCallable(final EnumSet<AnnounceFlag> flagSet) {
+        for (final AnnounceFlag flag : flagSet) {
+            if (flag.isCallable()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     
