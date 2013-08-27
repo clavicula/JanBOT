@@ -231,6 +231,8 @@ public final class GameMaster {
     
     /**
      * 副露せずに続行
+     * 
+     * @throws JanException ゲーム処理エラー。
      */
     public void onContinue() throws JanException {
         // 開始判定
@@ -558,7 +560,7 @@ public final class GameMaster {
             return new SoloJanController(_announcer);
         }
         else {
-            // TODO ネトマ未実装
+            // TODO ネトマ未対応
             return null;
         }
     }

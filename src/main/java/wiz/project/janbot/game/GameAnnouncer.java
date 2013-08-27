@@ -14,12 +14,12 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
+import wiz.project.ircbot.IRCBOT;
 import wiz.project.jan.Hand;
 import wiz.project.jan.JanPai;
 import wiz.project.jan.MenTsu;
 import wiz.project.jan.MenTsuType;
 import wiz.project.jan.Wind;
-import wiz.project.janbot.JanBOT;
 
 
 
@@ -113,7 +113,7 @@ public class GameAnnouncer implements Observer {
             messageList.add("---- 流局 ----");
         }
         
-        JanBOT.getInstance().println(messageList);
+        IRCBOT.getInstance().println(messageList);
     }
     
     

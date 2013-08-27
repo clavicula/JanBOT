@@ -11,6 +11,10 @@ import java.lang.reflect.Field;
 
 import org.pircbotx.PircBotX;
 import org.pircbotx.exception.IrcException;
+import org.pircbotx.hooks.Event;
+import org.pircbotx.hooks.Listener;
+
+import wiz.project.ircbot.IRCBOT;
 
 
 
@@ -34,7 +38,7 @@ public final class MockBOT {
         final String serverHost = "dummy.server.com";
         final int serverPort = 6667;
         final String channel = "#test-channel";
-        final JanCommandListener listener = createMessageListener();
+        final Listener<PircBotX> listener = createMessageListener();
         try {
             IRCBOT.getInstance().initialize(nickname, serverHost, serverPort, channel, listener);
         }
@@ -63,8 +67,12 @@ public final class MockBOT {
      * 
      * @return メッセージリスナー。
      */
-    private static JanCommandListener createMessageListener() {
-        return new JanCommandListener() {};
+    private static <T extends PircBotX> Listener<T> createMessageListener() {
+        return new Listener<T>() {
+            public void onEvent(final Event<T> event) throws Exception {
+                // 何もしない
+            }
+        };
     }
     
     /**

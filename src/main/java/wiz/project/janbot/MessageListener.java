@@ -30,6 +30,8 @@ import wiz.project.janbot.game.exception.JanException;
 
 /**
  * メッセージ受付
+ * 
+ * @param <T> PircBoxT、またはその継承クラス。
  */
 final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
     

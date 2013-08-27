@@ -649,6 +649,7 @@ class SoloJanController implements JanController {
     /**
      * プレイヤーの手牌マップを取得
      * 
+     * @param info ゲーム情報。
      * @param wind プレイヤーの風。
      * @return プレイヤーの手牌マップ。
      */
@@ -661,6 +662,7 @@ class SoloJanController implements JanController {
     /**
      * 指定牌込みでプレイヤーの手牌マップを取得
      * 
+     * @param info ゲーム情報。
      * @param wind プレイヤーの風。
      * @param source 手牌に追加する牌。
      * @return プレイヤーの手牌マップ。
@@ -722,6 +724,7 @@ class SoloJanController implements JanController {
      * 
      * @param hand クリーン済みの手牌マップ。
      * @param discard 捨て牌。
+     * @return 判定結果。
      */
     private boolean isCallableChi(final Map<JanPai, Integer> hand, final JanPai discard) {
         if (discard.isJi()) {
