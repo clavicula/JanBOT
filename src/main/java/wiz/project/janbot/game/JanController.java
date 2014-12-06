@@ -75,6 +75,13 @@ interface JanController {
     public void next() throws JanException;
     
     /**
+     * リーチ
+     * 
+     * @throws JanException 例外イベント。
+     */
+    public void richi(final JanPai target) throws JanException;
+    
+    /**
      * 開始
      * 
      * @param deck 牌山。

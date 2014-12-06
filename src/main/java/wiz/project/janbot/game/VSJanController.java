@@ -132,6 +132,16 @@ class VSJanController implements JanController {
     }
     
     /**
+     * リーチ
+     */
+    public void richi(final JanPai target) throws JanException {
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+    }
+    
+    /**
      * 開始
      */
     public void start(final List<JanPai> deck, final Map<Wind, Player> playerTable) throws JanException {

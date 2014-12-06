@@ -84,6 +84,15 @@ public final class WanPai implements Cloneable {
     }
     
     /**
+     * ドラ表字牌リストを取得
+     * 
+     * @return ドラ表字牌リスト。
+     */
+    public List<JanPai> getDoraPrevList() {
+        return deepCopyList(_doraPrevList);
+    }
+    
+    /**
      * 裏ドラリストを取得
      * 
      * @return 裏ドラリスト。(表示牌ではない)
@@ -94,6 +103,15 @@ public final class WanPai implements Cloneable {
             uraDoraList.add(_uraDoraPrevList.get(i).getNext());
         }
         return uraDoraList;
+    }
+    
+    /**
+     * 裏ドラ表字牌リストを取得
+     * 
+     * @return 裏ドラ表字牌リスト。
+     */
+    public List<JanPai> getUraDoraPrevList() {
+        return deepCopyList(_uraDoraPrevList);
     }
     
     /**

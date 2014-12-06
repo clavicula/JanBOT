@@ -281,6 +281,22 @@ class SoloJanController implements JanController {
     }
     
     /**
+     * リーチ
+     */
+    public void richi(final JanPai target) throws JanException {
+        if (!_onGame) {
+            throw new JanException("Game is not started.");
+        }
+        
+        // TODO リーチ対応
+        // _onRichiフラグ見て何かしたい
+        
+        _onRichi = true;
+        
+        discard(target);
+    }
+    
+    /**
      * 開始
      */
     public void start(final List<JanPai> deck, final Map<Wind, Player> playerTable) throws JanException {
@@ -335,6 +351,7 @@ class SoloJanController implements JanController {
             }
             
             // 1巡目
+            _onRichi = false;
             _firstPhase = true;
             _info.setActiveWind(Wind.TON);
             onPhase();
@@ -386,7 +403,7 @@ class SoloJanController implements JanController {
         hand.addJanPai(discard);
         
         for (final JanPai targetPai : targetList) {
-            if (hand.getJanPaiCount(targetPai) == 0) {
+            if (hand.getMenZenJanPaiCount(targetPai) == 0) {
                 // チー不可
                 throw new InvalidInputException("Can't chi.");
             }
@@ -443,6 +460,7 @@ class SoloJanController implements JanController {
                 if (menTsu.getSource().get(0) == target) {
                     final MenTsu kanLight = new MenTsu(Arrays.asList(target, target, target, target), MenTsuType.KAN_LIGHT);
                     fixedMenTsuList.set(i, kanLight);
+                    hand.setFixedMenTsuList(fixedMenTsuList);
                     break;
                 }
             }
@@ -456,7 +474,7 @@ class SoloJanController implements JanController {
         postProcessKan(activeWind);
         
         // 捨て牌選択
-        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_AFTER_CALL);
+        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_FIELD_AFTER_CALL);
     }
     
     /**
@@ -498,7 +516,7 @@ class SoloJanController implements JanController {
         postProcessKan(activeWind);
         
         // 捨て牌選択
-        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_AFTER_CALL);
+        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_FIELD_AFTER_CALL);
     }
     
     /**
@@ -513,7 +531,7 @@ class SoloJanController implements JanController {
         }
         
         final Hand hand = _info.getActiveHand();
-        if (hand.getJanPaiCount(target) < 3) {
+        if (hand.getMenZenJanPaiCount(target) < 3) {
             // 指定牌を3枚持っていない
             throw new InvalidInputException("Can't kan.");
         }
@@ -535,7 +553,7 @@ class SoloJanController implements JanController {
         postProcessKan(activeWind);
         
         // 捨て牌選択
-        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_AFTER_CALL);
+        _info.notifyObservers(ANNOUNCE_FLAG_HAND_TSUMO_FIELD_AFTER_CALL);
     }
     
     /**
@@ -546,7 +564,7 @@ class SoloJanController implements JanController {
     private void callPon() throws JanException {
         final JanPai discard = _info.getActiveDiscard();
         final Hand hand = _info.getActiveHand();
-        if (hand.getJanPaiCount(discard) < 2) {
+        if (hand.getMenZenJanPaiCount(discard) < 2) {
             // 指定牌を2枚持っていない
             throw new InvalidInputException("Can't pon.");
         }
@@ -585,8 +603,8 @@ class SoloJanController implements JanController {
         // 他家の待ち判定
         Wind targetWind = activeWind.getNext();
         while (targetWind != activeWind) {
-            // NPCはツモ切り固定
             if (_info.getPlayer(targetWind).getType() != PlayerType.COM) {
+                // NPCはツモ切り固定
                 final List<CallType> callableList = getCallableList(_info, activeWind, targetWind, target);
                 if (!callableList.isEmpty()) {
                     throw new CallableException(callableList);
@@ -605,11 +623,20 @@ class SoloJanController implements JanController {
      * @param discard 捨て牌。
      * @return 可能な副露リスト。
      */
-    private List<CallType> getCallableList(final JanInfo info, final Wind activeWind,  final Wind targetWind, final JanPai discard) {
+    private List<CallType> getCallableList(final JanInfo info, final Wind activeWind, final Wind targetWind, final JanPai discard) {
         final List<CallType> callTypeList = new ArrayList<>();
         // ロン可能か
         if (_completeWait.get(targetWind).contains(discard)) {
             callTypeList.add(CallType.RON);
+        }
+        
+        if (_onRichi) {
+            // リーチ中は副露不可
+            return callTypeList;
+        }
+        if (info.getRemainCount() == 0) {
+            // 残り0枚なら副露不可
+            return callTypeList;
         }
         
         // チー可能か
@@ -622,7 +649,7 @@ class SoloJanController implements JanController {
         // ポン可能か
         if (_ponWait.get(targetWind).contains(discard)) {
             callTypeList.add(CallType.PON);
-            if (info.getHand(targetWind).getJanPaiCount(discard) == 3) {
+            if (info.getHand(targetWind).getMenZenJanPaiCount(discard) == 3) {
                 callTypeList.add(CallType.KAN_LIGHT);
             }
         }
@@ -823,7 +850,7 @@ class SoloJanController implements JanController {
      * @param targetWind 更新対象の風。
      */
     private void updateWaitList(final JanInfo info, final Wind targetWind) {
-        final Map<JanPai, Integer> hand = getHandMap(_info, targetWind);
+        final Map<JanPai, Integer> hand = getHandMap(info, targetWind);
         _completeWait.put(targetWind, HandCheckUtil.getCompletableJanPaiList(hand));
         _chiWait.put(targetWind, getChiWaitList(hand));
         _ponWait.put(targetWind, getPonWaitList(hand));
@@ -844,8 +871,8 @@ class SoloJanController implements JanController {
         EnumSet.of(AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO, AnnounceFlag.FIELD);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_HAND_AFTER_CALL =
         EnumSet.of(AnnounceFlag.HAND, AnnounceFlag.AFTER_CALL);
-    private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_HAND_TSUMO_AFTER_CALL =
-        EnumSet.of(AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO, AnnounceFlag.AFTER_CALL);
+    private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_HAND_TSUMO_FIELD_AFTER_CALL =
+        EnumSet.of(AnnounceFlag.HAND, AnnounceFlag.ACTIVE_TSUMO, AnnounceFlag.FIELD, AnnounceFlag.AFTER_CALL);
     
     
     
@@ -870,6 +897,11 @@ class SoloJanController implements JanController {
      * 初巡フラグ
      */
     private volatile boolean _firstPhase = true;
+    
+    /**
+     * リーチフラグ
+     */
+    private volatile boolean _onRichi = false;
     
     /**
      * 副露後の打牌フラグ

@@ -99,6 +99,16 @@ public class GameAnnouncer implements Observer {
         if (flagSet.contains(AnnounceFlag.RIVER_SINGLE)) {
             messageList.add(convertRiverToString(info.getRiver(playerWind)));
         }
+        if (flagSet.contains(AnnounceFlag.RIVER_ALL)) {
+            // 出力文字数制限対策
+            // 分割して出力バッファに渡す
+            IRCBOT.getInstance().println(messageList);
+            IRCBOT.getInstance().println("東" + convertRiverToString(info.getRiver(Wind.TON)));
+            IRCBOT.getInstance().println("南" + convertRiverToString(info.getRiver(Wind.NAN)));
+            IRCBOT.getInstance().println("西" + convertRiverToString(info.getRiver(Wind.SHA)));
+            IRCBOT.getInstance().println("北" + convertRiverToString(info.getRiver(Wind.PEI)));
+            messageList.clear();
+        }
         if (flagSet.contains(AnnounceFlag.HAND)) {
             messageList.add(convertHandToString(playerWind, info, flagSet));
         }

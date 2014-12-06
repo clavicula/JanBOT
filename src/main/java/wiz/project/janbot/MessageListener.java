@@ -68,10 +68,10 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
                 IRCBOT.getInstance().println("(  ；∀；)");
                 IRCBOT.getInstance().disconnect();
             }
-            else if (message.equals("jan start")) {
+            else if (message.equals("jan s") || message.equals("jan start")) {
                 GameMaster.getInstance().onStartSolo(playerName);
             }
-            else if (message.equals("jan end")) {
+            else if (message.equals("jan e") || message.equals("jan end")) {
                 GameMaster.getInstance().onEnd();
             }
             else if (message.equals("jan d")) {
@@ -86,9 +86,19 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             else if (message.equals("jan r")) {
                 GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_RIVER);
             }
+            else if (message.equals("jan ra")) {
+                GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_RIVER_ALL);
+            }
             else if (message.equals("jan i r") || message.equals("jan r i")) {
                 GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_FIELD_AND_RIVER);
             }
+            else if (message.equals("jan i ra")) {
+                GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_FIELD_AND_RIVER_ALL);
+            }
+//            else if (message.startsWith("jan ri- ")) {
+//                TODO リーチ対応
+//                GameMaster.getInstance().onRichi(message.substring(8));
+//            }
             else if (message.startsWith("jan kan ")) {
                 GameMaster.getInstance().onCallKan(playerName, message.substring(8));
             }
@@ -101,12 +111,40 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             else if (message.startsWith("jan replay ")) {
                 GameMaster.getInstance().onReplay(playerName, message.substring(11));
             }
+//            else if (message.equals("jan download")) {
+//            上手く動かないので封印
+//                new Thread() {
+//                    @Override
+//                    public void run() {
+//                        try {
+//                            IRCBOT.getInstance().println("---- 牌山を" + playerName + "に送信中 ----");
+//                            event.getBot().dccSendFile(new File("./deck.bin"), event.getUser(), 180000);
+//                        }
+//                        catch (final Throwable e) {
+//                            // 何もしない
+//                        }
+//                    }
+//                }.start();
+//            }
             else if (message.equals("jan help")) {
                 final List<String> messageList =
-                    Arrays.asList("start：開始   end：終了   replay：リプレイ",
+                    Arrays.asList("s：開始   e：終了   replay：リプレイ",
                                   "i：状態   r：捨て牌   d X：指定牌(ex.9p)を切る (X指定無し：ツモ切り)",
+                                  "ra：他家を含む全ての捨て牌",
                                   "tsumo：ツモ和了   kan X：指定牌でカン");
                 IRCBOT.getInstance().println(messageList);
+            }
+            else if (message.startsWith("ri-chi!") || message.startsWith("りち！") || message.startsWith("りぃち！") || message.startsWith("りーち！") || message.startsWith("リーチ！")) {
+                IRCBOT.getInstance().println("⊂" + COLOR_FLAG + "04" + "●" + COLOR_FLAG + "⊃");
+            }
+            else if (message.startsWith("ri-chi") || message.startsWith("りち") || message.startsWith("りぃち") || message.startsWith("りーち") || message.startsWith("リーチ")) {
+                IRCBOT.getInstance().println("⊂" + COLOR_FLAG + "04" + "・" + COLOR_FLAG + "⊃");
+            }
+            else if (message.startsWith("カロセン")) {
+                IRCBOT.getInstance().println("⊂" + COLOR_FLAG + "04" + "㌍㌢" + COLOR_FLAG + "⊃");
+            }
+            else if (message.startsWith("キュイン")) {
+                IRCBOT.getInstance().println("⊂" + COLOR_FLAG + "04" + "㌒㌅" + COLOR_FLAG + "⊃");
             }
         }
         catch (final CallableException e) {
@@ -190,7 +228,7 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
                 IRCBOT.getInstance().println("(  ；∀；)");
                 IRCBOT.getInstance().disconnect();
             }
-            else if (message.equals("jan end")) {
+            else if (message.equals("jan e") || message.equals("jan end")) {
                 _confirmMode = false;
                 GameMaster.getInstance().onEnd();
             }
@@ -203,6 +241,9 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             }
             else if (message.equals("jan r")) {
                 GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_RIVER);
+            }
+            else if (message.equals("jan ra")) {
+                GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_RIVER_ALL);
             }
             else if (message.equals("jan i r") || message.equals("jan r i")) {
                 GameMaster.getInstance().onInfo(ANNOUNCE_FLAG_FIELD_AND_RIVER);
@@ -225,8 +266,9 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
             }
             else if (message.equals("jan help")) {
                 final List<String> messageList =
-                    Arrays.asList("chi X：指定牌(ex.9p)を先頭牌としてチー",
+                    Arrays.asList("chi X：指定牌(ex.3p)を先頭牌としてチー",
                                   "pon：ポン   kan X：指定牌でカン   ron：ロン",
+                                  "ra：他家を含む全ての捨て牌",
                                   "d：キャンセル");
                 IRCBOT.getInstance().println(messageList);
             }
@@ -264,8 +306,17 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         EnumSet.of(AnnounceFlag.FIELD);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_RIVER =
         EnumSet.of(AnnounceFlag.RIVER_SINGLE);
+    private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_RIVER_ALL =
+        EnumSet.of(AnnounceFlag.RIVER_ALL);
     private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_FIELD_AND_RIVER =
         EnumSet.of(AnnounceFlag.FIELD, AnnounceFlag.RIVER_SINGLE);
+    private static final EnumSet<AnnounceFlag> ANNOUNCE_FLAG_FIELD_AND_RIVER_ALL =
+        EnumSet.of(AnnounceFlag.FIELD, AnnounceFlag.RIVER_ALL);
+    
+    /**
+     * 色付けフラグ
+     */
+    private static final char COLOR_FLAG = 3;
     
     
     
